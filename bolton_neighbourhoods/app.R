@@ -14,9 +14,11 @@
     neighbourhood_names <- c("Breightmet/Little Lever", "Central/Great Lever", "Chorley Roads", 
                              "Crompton/Halliwell", "Farnworth/Kearsley", "Horwich",
                              "Rumworth", "Turton", "Westhoughton")
+    neighbourhood_boundaries <- readRDS("neighbourhood boundaries.RDS")
+    local_health_data_msoa <- readRDS("local health data with boundaries.RDS")
 
 # Define UI for application that draws a histogram
-ui <-  dashboardPage(
+ui <-  dashboardPage(skin = "yellow",
 
     # Application title
     dashboardHeader(title = "Bolton Neighbourhood Information",
@@ -29,12 +31,26 @@ ui <-  dashboardPage(
         sidebarMenu(
                     menuItem("Using", tabName = "using", icon = icon("map-signs")),
                     menuItem("Table 1", tabName = "table_tab", icon = icon("table")),
+                    menuItem("Map", tabName = "map", icon = icon("globe")),
                     menuItem("About the data", tabName = "about", icon = icon("comment-dots"))
          ),
         # neighbourhood selector
         selectInput(inputId = "select_neighbourhood",
                     label = "Select neighbourhood:",
-                    choices = neighbourhood_names)
+                    choices = neighbourhood_names
+                    ),
+        
+        # domain selector (loads of indicators)
+        selectInput(inputId = "select_domain",
+                    label = "Select domain:",
+                    choices = unique(neighbourhood_data$DomainName)
+                    ),
+        # neighbourhood selector
+        selectInput(inputId = "select_indicator",
+                    label = "Select indicator to map:",
+                    choices = unique(neighbourhood_data$IndicatorName)
+        )
+        
     ),
     
     dashboardBody(
@@ -47,6 +63,11 @@ ui <-  dashboardPage(
             # tab1
             tabItem(tabName = "table_tab",
                     DT::DTOutput("table1")
+            ),
+            
+            # map
+            tabItem(tabName = "map",
+                    leafletOutput("indicator_map")
             ),
             
             # data sources
@@ -101,17 +122,57 @@ server <- function(input, output) {
     # })
     
 
-    
+    # table
     output$table1 <- DT::renderDT({
         data = neighbourhood_data %>%
                     # filtered_data() %>%
-                    filter(neighbourhood == input$select_neighbourhood) %>%
-                    select(DomainName, IndicatorName, Sex, Age, Timeperiod, 
-                           neighbourhood, pct_value_neighbourhood, pct_value_bolton) %>%
+                    filter(neighbourhood == input$select_neighbourhood & 
+                               DomainName == input$select_domain) %>%
                     mutate(pct_value_neighbourhood = round(pct_value_neighbourhood, 1),
-                           pct_value_bolton = round(pct_value_bolton, 1))
+                           pct_value_bolton = round(pct_value_bolton, 1)) %>%
+                    select(IndicatorName, 
+                           `Neighbourhood value` = pct_value_neighbourhood, `Bolton value` = pct_value_bolton,
+                           Sex, Age, `Time period` = Timeperiod) 
+
    }, filter = "top", rownames = FALSE)
     
+    # reactive dataset for map
+    output$map_data <- reactive({
+        local_health_data_msoa %>%
+            filter(neighbourhood == input$select_neighbourhood & IndicatorName == input$select_indicator) 
+    })
+    
+    # selected neighbourhood
+    output$neighbourhood_boundary <- reactive({
+        neighbourhood_boundaries %>%
+            filter(neighbourhood_name == input$select_neighbourhood) 
+    })
+    
+    
+    # map palette
+    output$msoa_pal <- reactive({
+        colorNumeric(
+            palette = "Blues", 
+            domain = map_data()$Value, 
+            na.color = "white")
+    })
+    
+    output$indicator_map <- renderLeaflet({
+        map_data() %>%
+        leaflet() %>%
+        addResetMapButton() %>%
+        addProviderTiles("Stamen.TonerLite") %>%
+        #addPolylines(data = neighbourhood_boundary(), weight = 4, color = "black") %>%
+        addPolygons( #data = map_data(), 
+                    weight = 0.75, color = "grey", 
+                    fillColor = ~msoa_pal()(Value), fillOpacity = 0.5, 
+                    highlight = highlightOptions(weight = 4, color = "grey"),
+                    label = ~paste(Value), 
+                    labelOptions = labelOptions(
+                        style = list("font-weight" = "normal", padding = "3px 8px"),
+                        textsize = "15px",
+                        direction = "auto"))
+    })
 }
 
 ##########################################################################################################
