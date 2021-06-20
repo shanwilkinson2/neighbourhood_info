@@ -7,6 +7,9 @@
     library(shiny)
     library(shinydashboard)
     library(dplyr)
+    library(sf)
+    library(leaflet)
+    library(leaflet.extras)
 
 # load static datasets
     data_refresh_date <- "14/06/2021"
@@ -26,11 +29,10 @@ ui <-  dashboardPage(skin = "yellow",
 
     # Sidebar 
     dashboardSidebar(
-        p(glue::glue("Data last refreshed: {data_refresh_date}")),
         # tab selector menu
         sidebarMenu(
-                    menuItem("Using", tabName = "using", icon = icon("map-signs")),
-                    menuItem("Table 1", tabName = "table_tab", icon = icon("table")),
+                    menuItem("Using this tool", tabName = "using", icon = icon("map-signs")),
+                    menuItem("Table", tabName = "table_tab", icon = icon("table")),
                     menuItem("Map", tabName = "map", icon = icon("globe")),
                     menuItem("About the data", tabName = "about", icon = icon("comment-dots"))
          ),
@@ -45,11 +47,8 @@ ui <-  dashboardPage(skin = "yellow",
                     label = "Select domain:",
                     choices = unique(neighbourhood_data$DomainName)
                     ),
-        # neighbourhood selector
-        selectInput(inputId = "select_indicator",
-                    label = "Select indicator to map:",
-                    choices = unique(neighbourhood_data$IndicatorName)
-        )
+        # indicator selector
+        uiOutput("indicators_in_domain")
         
     ),
     
@@ -62,95 +61,84 @@ ui <-  dashboardPage(skin = "yellow",
                     
             # tab1
             tabItem(tabName = "table_tab",
+                    h2(textOutput("selected_neighbourhood")),
+                    h3(textOutput("selected_domain")),
                     DT::DTOutput("table1")
             ),
             
             # map
             tabItem(tabName = "map",
+                    #h2(textOutput("selected_neighbourhood")), # makes all reactive stuff not show
+                    h3(textOutput("selected_indicator")),
                     leafletOutput("indicator_map")
             ),
             
             # data sources
             tabItem(tabName = "about",
-                    p("some more text")
+                    p("data sourced from... link"),
+                    p(glue::glue("Data last refreshed: {data_refresh_date}")),
             )
         )
     )
 )
 
-    
-        
-    
-    
-#     ####
-#     sidebarLayout(
-#         sidebarPanel(
-#             selectInput("select_neighbourhood",
-#                         "Select neighbourhood:",
-#                         choices = neighbourhood_names)
-#         ),
-# 
-#         # Show a plot of the generated distribution
-#         mainPanel(
-#             tabsetPanel(type = "tabs",
-#                         
-#                 tabPanel(
-#                     DT::DTOutput("table1")
-#                 ),
-# 
-#                 tabPanel(
-#                     h1("Data source"),
-#                     p("Link to fingertips local health"),
-#                     p("include caution re significant differences, useful differences")
-#                 )
-#         )
-#     )
-# )
-# )
-
 ##########################################################################################################
 
 server <- function(input, output) {
     
-    # # doesn't work
-    # # dataset of all indicators for selected neighbourhood & Bolton
-    # # datatable makes a table widget, can format it
-    # output$filtered_data <- DT::datatable(reactive{
-    #    neighbourhood_data %>%
-    #         filter(neighbourhood == input$select_neighbourhood | neighbourhood == "Bolton") %>%
-    #         mutate(pct_value = round(pct_value, 1))
-    # })
+# name of selected neighbourhood
+    output$selected_neighbourhood <- renderText({input$select_neighbourhood})
+  
+# name of selected domain
+    output$selected_domain <- renderText({input$select_domain})
+
+# name of selected indicator
+    output$selected_indicator <- renderText({input$select_indicator})
     
+      
+# indicators in selected domain for dropdown
+    output$indicators_in_domain <- renderUI({
+        selectInput(inputId = "select_indicator",
+                    label = "Select indicator to map:",
+                    choices = unique(neighbourhood_data[neighbourhood_data$DomainName == input$select_domain,"IndicatorName"])
+        )
+    })
+    
+# data for table for selected neighbourhood for selected domain
+    table_data <- reactive({
+        neighbourhood_data %>%
+            # filtered_data() %>%
+            filter(neighbourhood == input$select_neighbourhood & 
+                       DomainName == input$select_domain) %>%
+            mutate(pct_value_neighbourhood = round(pct_value_neighbourhood, 1),
+                   pct_value_bolton = round(pct_value_bolton, 1)) %>%
+            select(IndicatorName, 
+                   `Neighbourhood value` = pct_value_neighbourhood, `Bolton value` = pct_value_bolton,
+                   Sex, Age, `Time period` = Timeperiod) 
+    })
 
-    # table
+
+    # create table
     output$table1 <- DT::renderDT({
-        data = neighbourhood_data %>%
-                    # filtered_data() %>%
-                    filter(neighbourhood == input$select_neighbourhood & 
-                               DomainName == input$select_domain) %>%
-                    mutate(pct_value_neighbourhood = round(pct_value_neighbourhood, 1),
-                           pct_value_bolton = round(pct_value_bolton, 1)) %>%
-                    select(IndicatorName, 
-                           `Neighbourhood value` = pct_value_neighbourhood, `Bolton value` = pct_value_bolton,
-                           Sex, Age, `Time period` = Timeperiod) 
-
+        table_data()
    }, filter = "top", rownames = FALSE)
     
     # reactive dataset for map
-    output$map_data <- reactive({
+    # why is neighbourhood called neighbourhood.y?
+    map_data <- reactive({
         local_health_data_msoa %>%
-            filter(neighbourhood == input$select_neighbourhood & IndicatorName == input$select_indicator) 
+            filter(neighbourhood.y == input$select_neighbourhood & IndicatorName == input$select_indicator) 
     })
     
-    # selected neighbourhood
-    output$neighbourhood_boundary <- reactive({
+    # reactive boundary of selected neighbourhood
+    neighbourhood_boundary <- reactive({
         neighbourhood_boundaries %>%
             filter(neighbourhood_name == input$select_neighbourhood) 
     })
     
     
     # map palette
-    output$msoa_pal <- reactive({
+    msoa_pal <- reactive({
         colorNumeric(
             palette = "Blues", 
             domain = map_data()$Value, 
@@ -162,12 +150,12 @@ server <- function(input, output) {
         leaflet() %>%
         addResetMapButton() %>%
         addProviderTiles("Stamen.TonerLite") %>%
-        #addPolylines(data = neighbourhood_boundary(), weight = 4, color = "black") %>%
+        addPolylines(data = neighbourhood_boundary(), weight = 4, color = "black") %>%
         addPolygons( #data = map_data(), 
                     weight = 0.75, color = "grey", 
                     fillColor = ~msoa_pal()(Value), fillOpacity = 0.5, 
                     highlight = highlightOptions(weight = 4, color = "grey"),
-                    label = ~paste(Value), 
+                    label = ~paste(hoc_msoa_name, round(Value)), 
                     labelOptions = labelOptions(
                         style = list("font-weight" = "normal", padding = "3px 8px"),
                         textsize = "15px",
