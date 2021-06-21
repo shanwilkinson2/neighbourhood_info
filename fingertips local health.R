@@ -2,9 +2,11 @@
 install.packages("fingertipsR", repos = "https://dev.ropensci.org")
 # also need "shinycssloaders" 
 install.packages("shinycssloaders")
+install.packages("miniUI")
 
 
 library(dplyr)
+library(shinycssloaders)
 library(fingertipsR)
 library(data.table)
 library(nomisr)
@@ -20,13 +22,14 @@ local_health_data_msoa <- readRDS("local health data with boundaries.RDS")
 # local health 
 # https://fingertips.phe.org.uk/profile/local-health/data#page/0/gid/1938133180/ati/3/iid/93744/age/28/sex/4/cid/4/tbm/1
 
+
+# get data off fingertips local health
 fingertips_live_indicators <- indicators()
-local_health_indicators <- fingertips_live_indicators %>%
-  filter(ProfileID == 143)
+local_health_indicators <- indicators(ProfileID = 143)
 
 local_health <- fingertips_data(IndicatorID = local_health_indicators$IndicatorID,
-                                  ProfileID = 143 #,
-                                # AreaTypeID = c(3, 202, 302, 402) #  - doesn't seem to work202, 302, 402 UTLA with boundary changes, MSOA = 3
+                                  ProfileID = 143#,
+                                #AreaTypeID = "All" #  - doesn't seem to work202, 302, 402 UTLA with boundary changes, MSOA = 3
                                 ) 
 
 bolton_local_health <- local_health %>%
