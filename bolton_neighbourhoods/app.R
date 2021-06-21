@@ -93,14 +93,14 @@ ui <-  dashboardPage(skin = "yellow",
                     a("PHE Local Health profiles", href = "https://fingertips.phe.org.uk/profile/local-health", 
                       target = "_blank"),
                     p("Local Health only goes down to MSOA (Middle Super Output Area) whereas Bolton's Neighbourhoods are built of LSOAs (Lower Super Output Areas) which have different boundaries."),
-                    p("MSOAs have been used to approximate neighbourhoods, based on the Neighbourhood in which most population falls. The slight differences in boundaries is visible on the map."), 
+                    p("MSOAs have been used to approximate neighbourhoods, based on the Neighbourhood in which most population falls. The slight difference in boundaries is visible on the map."), 
                     p(glue::glue("Data last refreshed: {data_refresh_date}")),
                     br(),
                     h2("Interim issues while this tool is under development"),
-                    p("Currently this tool contains indicators from PHE fingertips local health where the indicator data is provided as a numerator & denominator, for ease of combining. Some of these indicators are not percentages so look dodgy. Other indicators are not included as they are provided in different forms but which may be usefu & may be added in future."), 
+                    p("Currently this tool contains indicators from PHE fingertips local health where the indicator data is provided as a numerator & denominator, for ease of combining. Some of these indicators are not percentages so look dodgy. Other indicators are not included as they are provided in different forms but which may be useful & may be added in future."), 
                     br(),
                     h2("Code"),
-                    p("The code for this app is on my github"),
+                    p("The code for this app is on my github."),
                     a("Github", href = "https://github.com/shanwilkinson2/neighbourhood_info", 
                       target = "_blank"),
             )
@@ -150,10 +150,11 @@ server <- function(input, output) {
    }, filter = "top", rownames = FALSE)
     
     # reactive dataset for map
+    # includes all neighbourhoods here for indicator palatte
     # why is neighbourhood called neighbourhood.y?
     map_data <- reactive({
         local_health_data_msoa %>%
-            filter(neighbourhood.y == input$select_neighbourhood & IndicatorName == input$select_indicator) 
+            filter(IndicatorName == input$select_indicator) 
     })
     
     # reactive boundary of selected neighbourhood
@@ -173,6 +174,7 @@ server <- function(input, output) {
     
     output$indicator_map <- renderLeaflet({
         map_data() %>%
+        filter(neighbourhood.y == input$select_neighbourhood) %>%
         leaflet() %>%
         addResetMapButton() %>%
         addProviderTiles("Stamen.TonerLite") %>%
