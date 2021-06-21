@@ -34,7 +34,7 @@ ui <-  dashboardPage(skin = "yellow",
                     menuItem("Using this tool", tabName = "using", icon = icon("map-signs")),
                     menuItem("Table", tabName = "table_tab", icon = icon("table")),
                     menuItem("Map", tabName = "map", icon = icon("globe")),
-                    menuItem("About the data", tabName = "about", icon = icon("comment-dots"))
+                    menuItem("About the data", tabName = "about", icon = icon("info"))
          ),
         # neighbourhood selector
         selectInput(inputId = "select_neighbourhood",
@@ -56,7 +56,20 @@ ui <-  dashboardPage(skin = "yellow",
         tabItems(
             # using this
             tabItem(tabName = "using",
-                    p("text")
+                    h2("What is this?"),
+                    p("This tool was developed by Bolton Council's public health intelligence team. It gives some information about the populations in Bolton's integrated care neighbourhoods & factors affecting their current & future health."),
+                    p("It has been developed by combining data already avalable at small area level."),
+                    br(),
+                    h2("What should I do with this?"),
+                    p("Consider questions such as:"),
+                    p("How is your neighbourhood different from or similar to Bolton as a whole? Small differences may not be important but big differences may be."),
+                    p("Are there big differences within your neighbourhood or is it quite similar overall?"),
+                    br(),
+                    p("Consider this as one source of information in your decision making. Data, evidence & intelligence can help you decide, or shape your thinking but does not hold all the answers!"),
+                    p("What decisions do you need to make? What information do you need to determine direction of travel & choose between options?"),
+                    p("The information you need will most likely involve using data, evidence & intelligence alongside your professional judgement of what is feasible within your constraints & most likely to be successful."),
+                    p("Often the perfect piece of information won't be available, do you have enough? Sometimes you won't feel you have enough but will still have to make a decision."),
+                    p("More data, evidence & intelligence always raises more questions, that's good! Use it to develop & test your questions & assumptions which hopepfully will help you make better decisions.")
             ),
                     
             # tab1
@@ -75,8 +88,21 @@ ui <-  dashboardPage(skin = "yellow",
             
             # data sources
             tabItem(tabName = "about",
-                    p("data sourced from... link"),
+                    h2("Data source"),
+                    p("Data is sourced from PHE fingertips local health dashboard. This gives more information about where the indicators come from."),
+                    a("PHE Local Health profiles", href = "https://fingertips.phe.org.uk/profile/local-health", 
+                      target = "_blank"),
+                    p("Local Health only goes down to MSOA (Middle Super Output Area) whereas Bolton's Neighbourhoods are built of LSOAs (Lower Super Output Areas) which have different boundaries."),
+                    p("MSOAs have been used to approximate neighbourhoods, based on the Neighbourhood in which most population falls. The slight differences in boundaries is visible on the map."), 
                     p(glue::glue("Data last refreshed: {data_refresh_date}")),
+                    br(),
+                    h2("Interim issues while this tool is under development"),
+                    p("Currently this tool contains indicators from PHE fingertips local health where the indicator data is provided as a numerator & denominator, for ease of combining. Some of these indicators are not percentages so look dodgy. Other indicators are not included as they are provided in different forms but which may be usefu & may be added in future."), 
+                    br(),
+                    h2("Code"),
+                    p("The code for this app is on my github"),
+                    a("Github", href = "https://github.com/shanwilkinson2/neighbourhood_info", 
+                      target = "_blank"),
             )
         )
     )
@@ -140,7 +166,7 @@ server <- function(input, output) {
     # map palette
     msoa_pal <- reactive({
         colorNumeric(
-            palette = "Blues", 
+            palette = "YlOrRd", 
             domain = map_data()$Value, 
             na.color = "white")
     })
@@ -150,9 +176,9 @@ server <- function(input, output) {
         leaflet() %>%
         addResetMapButton() %>%
         addProviderTiles("Stamen.TonerLite") %>%
-        addPolylines(data = neighbourhood_boundary(), weight = 4, color = "black") %>%
+        addPolylines(data = neighbourhood_boundary(), weight = 4, color = "red") %>%
         addPolygons( #data = map_data(), 
-                    weight = 0.75, color = "grey", 
+                    weight = 0.75, color = "black", 
                     fillColor = ~msoa_pal()(Value), fillOpacity = 0.5, 
                     highlight = highlightOptions(weight = 4, color = "grey"),
                     label = ~paste(hoc_msoa_name, round(Value)), 
