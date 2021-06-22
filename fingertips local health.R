@@ -22,6 +22,8 @@ msoa_boundaries <- readRDS("msoa boundaries.RDS")
 neighbourhood_boundaries <- readRDS("neighbourhood boundaries.RDS")
 local_health_data_msoa <- readRDS("local health data with boundaries.RDS")
 lsoa_neighbourhood <- readRDS("lsoa_neighbourhood.rds")
+msoa_neighbourhood <- readRDS("msoas_neighbourhood.rds")
+neighbourhood_indicators <- readRDS("neighbourhood_indicators.RDS")
 
 ###################### boundaries ################################
 
@@ -226,12 +228,14 @@ lsoa_neighbourhood <- readRDS("lsoa_neighbourhood.rds")
     by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable"),
     suffix = c("_neighbourhood", "_bolton")
   ) %>%
+    # add msoa boundary
     right_join(# right join to keep geometry
-               bolton_local_health2,
-               by = c("msoa11cd" = "AreaCode")
+               msoa_boundaries %>%
+                 select(msoa11cd),
+               by = c("msoa_code" = "msoa11cd")
     )
   
-
+saveRDS(nbourhood_indicators2, "neighbourhood_indicators.RDS")
 
 ##################### map ###############################
 

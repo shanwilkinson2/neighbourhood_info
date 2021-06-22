@@ -19,7 +19,10 @@
                              "Rumworth", "Turton", "Westhoughton")
     neighbourhood_boundaries <- readRDS("neighbourhood boundaries.RDS")
     local_health_data_msoa <- readRDS("local health data with boundaries.RDS")
-
+    
+    # msoa data with summary & boundaries - hopefully single dataset to load
+    neighbourhood_indicators <- readRDS("neighbourhood_indicators.RDS")
+    
 # Define UI for application that draws a histogram
 ui <-  dashboardPage(skin = "yellow",
 
