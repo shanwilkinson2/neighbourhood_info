@@ -24,16 +24,39 @@ local_health_data_msoa <- readRDS("local health data with boundaries.RDS")
 
 
 # get data off fingertips local health
-fingertips_live_indicators <- indicators()
-local_health_indicators <- indicators(ProfileID = 143)
+  # fingertips_live_indicators <- indicators() # all indicators
+# available indicators in local health profile
+  local_health_indicators <- indicators(ProfileID = 143)
 
-local_health <- fingertips_data(IndicatorID = local_health_indicators$IndicatorID,
-                                  ProfileID = 143#,
-                                #AreaTypeID = "All" #  - doesn't seem to work202, 302, 402 UTLA with boundary changes, MSOA = 3
-                                ) 
+# get Bolton msoa data for all local health indicators  
+  bolton_area_codes <- c( #"E08000001", # bolton itself
+    "E02000984", "E02000985", "E02000986", "E02000987",
+    "E02000988", "E02000989", "E02000990", "E02000991", "E02000992",
+    "E02000993", "E02000994", "E02000995", "E02000996", "E02000997",
+    "E02000998", "E02000999", "E02001000", "E02001001", "E02001002",
+    "E02001003", "E02001004", "E02001005", "E02001006", "E02001007",
+    "E02001008", "E02001009", "E02001010", "E02001011", "E02001012",
+    "E02001013", "E02001014", "E02001015", "E02001016", "E02001017",
+    "E02001018")
+  
+  local_health_msoa <- fingertips_data(IndicatorID = local_health_indicators$IndicatorID,
+                                  ProfileID = 143,
+                                  AreaTypeID = 3, # "All" #  - doesn't seem to work202, 302, 402 UTLA with boundary changes, MSOA = 3
+                                  AreaCode = bolton_area_codes
+                                  ) 
 
-bolton_local_health <- local_health %>%
-  filter(ParentName == "Bolton" | AreaName == "Bolton")
+  local_health_ua <- fingertips_data(IndicatorID = local_health_indicators$IndicatorID,
+                                      ProfileID = 143,
+                                      AreaTypeID = 402, # "All" #  - doesn't seem to work202, 302, 402 UTLA with boundary changes, MSOA = 3
+                                      AreaCode = "E08000001" # bolton
+  ) 
+
+  # join msoa & ua
+  local_health <- bind_rows(local_health_msoa, local_health_ua)
+  
+  # get rid of seperate files
+  rm(local_health_msoa)
+  rm(local_health_ua)
 
 # MSOA best fit (local health doesn't go down to lsoa)
 
