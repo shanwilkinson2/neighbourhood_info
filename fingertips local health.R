@@ -25,7 +25,8 @@ library(leaflet.extras)
   neighbourhood_boundaries <- readRDS("./bolton_neighbourhoods/neighbourhood boundaries.RDS") # in the app folder
 
 # data
-  neighbourhood_data <- local_health_data_msoa <- readRDS("./bolton_neighbourhoods/local health data with boundaries.RDS") # in the app folder
+  #neighbourhood_data <- 
+  local_health_data_msoa <- readRDS("./bolton_neighbourhoods/local health data with boundaries.RDS") # in the app folder
   neighbourhood_indicators <- readRDS("./bolton_neighbourhoods/dashboard_indicators.RDS")
   
   # hopefully single dataset to replace the 2 above

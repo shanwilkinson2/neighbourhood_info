@@ -13,15 +13,16 @@
 
 # load static datasets
     data_refresh_date <- "23/06/2021"
-    # neighbourhood_data <- readRDS("dashboard_indicators.RDS")
+
     neighbourhood_names <- c("Breightmet/Little Lever", "Central/Great Lever", "Chorley Roads", 
                              "Crompton/Halliwell", "Farnworth/Kearsley", "Horwich",
                              "Rumworth", "Turton", "Westhoughton")
     neighbourhood_boundaries <- readRDS("neighbourhood boundaries.RDS")
-    local_health_data_msoa <- readRDS("local health data with boundaries.RDS")
     
-    # msoa data with summary & boundaries - hopefully single dataset to load
+    # msoa data with summary & boundaries - single dataset to load for both neighbourhood & msoa level
     neighbourhood_indicators <- readRDS("neighbourhood_indicators.RDS")
+    
+    # single dataset filtered for neighbourhood only
     neighbourhood_data <- neighbourhood_indicators %>%
       st_drop_geometry() %>%
       group_by(IndicatorID, Sex, Age, neighbourhood) %>%
@@ -29,7 +30,13 @@
       ungroup() %>%
       select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name))
     
-# Define UI for application that draws a histogram
+    # single dataset filtered for msoa only
+    msoa_data <- neighbourhood_indicators %>%
+      select(neighbourhood, hoc_msoa_name, msoa11cd:IndicatorName, Value)
+      
+    
+#######################################################################
+    
 ui <-  dashboardPage(skin = "yellow",
 
     # Application title
@@ -163,9 +170,8 @@ server <- function(input, output) {
     
     # reactive dataset for map
     # includes all neighbourhoods here for indicator palatte
-    # why is neighbourhood called neighbourhood.y?
     map_data <- reactive({
-        local_health_data_msoa %>%
+        msoa_data %>%
             filter(IndicatorName == input$select_indicator) 
     })
     
@@ -186,7 +192,7 @@ server <- function(input, output) {
     
     output$indicator_map <- renderLeaflet({
         map_data() %>%
-        filter(neighbourhood.y == input$select_neighbourhood) %>%
+        filter(neighbourhood == input$select_neighbourhood) %>%
         leaflet() %>%
         addResetMapButton() %>%
         addProviderTiles("Stamen.TonerLite") %>%
