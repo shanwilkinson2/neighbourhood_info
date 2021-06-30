@@ -25,7 +25,7 @@ library(leaflet.extras)
   neighbourhood_boundaries <- readRDS("./bolton_neighbourhoods/neighbourhood boundaries.RDS") # in the app folder
 
 # data
-  neighbourhood_data <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS")
+  # neighbourhood_data <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS")
   #local_health_data_msoa <- readRDS("./bolton_neighbourhoods/local health data with boundaries.RDS") # in the app folder
   #neighbourhood_indicators <- readRDS("./bolton_neighbourhoods/dashboard_indicators.RDS")
   
@@ -316,6 +316,35 @@ leaflet() %>%
                 style = list("font-weight" = "normal", padding = "3px 8px"),
                 textsize = "15px",
                 direction = "auto"))
+
+###################### chart ##########################
+
+library(plotly)
+
+neighbourhood_indicators <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS") # in the app folder
+
+chart_data <- neighbourhood_indicators %>%
+  st_drop_geometry() %>%
+  filter(#neighbourhood == "Chorley Roads" &
+           # neighbourhood == "Turton" &
+             neighbourhood == "Central/Great Lever" &   
+           IndicatorName == "Percentage of the total resident population who are 65 and over") %>%
+  #group_by(neighbourhood) %>%
+  slice(1) 
+
+  # chart
+  plot_ly() %>%
+    add_trace(type = "box",
+              y =1,
+              q1 = chart_data$nbourhood_min,
+              # calculated value if it's available otherwise median
+              median = ifelse(is.na(chart_data$nbourhood_pct), chart_data$nbourhood_median,chart_data$nbourhood_pct),
+              q3 = chart_data$nbourhood_max,
+              lowerfence = chart_data$bolton_min,
+              upperfence = chart_data$bolton_max,
+              notchspan = 0.3
+              )
+  
 
 
 ###################### nomis ##########################

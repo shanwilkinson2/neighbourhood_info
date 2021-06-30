@@ -52,6 +52,7 @@ ui <-  dashboardPage(skin = "yellow",
         sidebarMenu(
                     menuItem("Using this tool", tabName = "using", icon = icon("map-signs")),
                     menuItem("Table", tabName = "table_tab", icon = icon("table")),
+                    menuItem("Chart", tabName = "chart_tab", icon = icon("chart-line")),
                     menuItem("Map", tabName = "map", icon = icon("globe")),
                     menuItem("About the data", tabName = "about", icon = icon("info"))
          ),
@@ -96,6 +97,13 @@ ui <-  dashboardPage(skin = "yellow",
                     h2(textOutput("selected_neighbourhood")),
                     h3(textOutput("selected_domain")),
                     DT::DTOutput("table1")
+            ),
+            
+            # chart
+            tabItem(tabName = "chart_tab",
+                    #h2(textOutput("selected_neighbourhood")), # makes all reactive stuff not show
+                    #textOutput("selected_indicator"),
+                    p("Chart showing neighbourhood range vs Bolton on selected indicator.")
             ),
             
             # map
