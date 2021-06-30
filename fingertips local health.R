@@ -169,7 +169,6 @@ library(leaflet.extras)
         
 ####### transform to neighbourhood level ##############################################################
 
-
 # combine by neighbourhood for those indicators with a count & denominator     
   count_denom_indicators <- bolton_local_health2 %>%
     group_by(DomainID, DomainName, IndicatorID, IndicatorName, Sex, Age, Timeperiod, TimeperiodSortable, neighbourhood) %>%
@@ -232,7 +231,6 @@ library(leaflet.extras)
     group_by(IndicatorID, Sex, Age, TimeperiodSortable) %>%
     mutate(bolton_min = min(Value),
            bolton_max = max(Value))
-           ) 
   
   # pivot to get bolton value in a different column
   nbourhood_indicators2 <- left_join(
