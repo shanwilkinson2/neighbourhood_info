@@ -1,0 +1,50 @@
+msoa_code,msoa_name,hoc_msoa_name,neighbourhood,pct_of_lsoa
+E02000984,Bolton 001,Dunscar & Egerton,Turton,100
+E02000985,Bolton 002,Bromley Cross & Bradshaw,Turton,100
+E02000986,Bolton 003,Eagley & Sharples,Turton,100
+E02000987,Bolton 004,Horwich North,Horwich,100
+E02000988,Bolton 005,Astley Bridge & Waters Meeting,Crompton/Halliwell,60
+E02000988,Bolton 005,Astley Bridge & Waters Meeting,Turton,40
+E02000989,Bolton 006,Harwood,Turton,50
+E02000989,Bolton 006,Harwood,Breightmet/Little Lever,50
+E02000990,Bolton 007,Horwich South & Middlebrook,Horwich,100
+E02000991,Bolton 008,Smithills,Chorley Roads,100
+E02000992,Bolton 009,Blackrod & Butterwick Fields,Horwich,100
+E02000993,Bolton 010,Hall I' th' Wood,Crompton/Halliwell,83
+E02000993,Bolton 010,Hall I' th' Wood,Breightmet/Little Lever,17
+E02000994,Bolton 011,Halliwell & Brownlow Fold,Chorley Roads,61
+E02000994,Bolton 011,Halliwell & Brownlow Fold,Crompton/Halliwell,39
+E02000995,Bolton 012,Doffcocker & Moss Bank,Chorley Roads,100
+E02000996,Bolton 013,Breightmet North,Breightmet/Little Lever,100
+E02000997,Bolton 014,Horwich East,Horwich,100
+E02000998,Bolton 015,Gilnow & Victory,Chorley Roads,82
+E02000998,Bolton 015,Gilnow & Victory,Rumworth,18
+E02000999,Bolton 016,Central Bolton,Crompton/Halliwell,64
+E02000999,Bolton 016,Central Bolton,Central/Great Lever,36
+E02001000,Bolton 017,Tonge,Breightmet/Little Lever,66
+E02001000,Bolton 017,Tonge,Central/Great Lever,34
+E02001001,Bolton 018,Heaton & Deane,Chorley Roads,57
+E02001001,Bolton 018,Heaton & Deane,Rumworth,43
+E02001002,Bolton 019,Breightmet South & Darcy Lever,Breightmet/Little Lever,100
+E02001003,Bolton 020,Lostock & Ladybridge,Chorley Roads,58
+E02001003,Bolton 020,Lostock & Ladybridge,Rumworth,42
+E02001004,Bolton 021,Rumworth North,Rumworth,100
+E02001005,Bolton 022,Springfield & Great Lever,Central/Great Lever,100
+E02001006,Bolton 023,Rumworth South,Rumworth,100
+E02001007,Bolton 024,Little Lever,Breightmet/Little Lever,100
+E02001008,Bolton 025,Lever Edge,Central/Great Lever,81
+E02001008,Bolton 025,Lever Edge,Rumworth,19
+E02001009,Bolton 026,Daubhill & Fernhill Gate,Rumworth,100
+E02001010,Bolton 027,Farnworth North,Farnworth/Kearsley,100
+E02001011,Bolton 028,Westhoughton East,Westhoughton,85
+E02001011,Bolton 028,Westhoughton East,Farnworth/Kearsley,15
+E02001012,Bolton 029,Harper Green,Farnworth/Kearsley,100
+E02001013,Bolton 030,Over Hulton,Westhoughton,47
+E02001013,Bolton 030,Over Hulton,Rumworth,27
+E02001013,Bolton 030,Over Hulton,Horwich,26
+E02001014,Bolton 031,Westhoughton West,Westhoughton,100
+E02001015,Bolton 032,Farnworth South,Farnworth/Kearsley,100
+E02001016,Bolton 033,Highfield & New Bury,Farnworth/Kearsley,100
+E02001017,Bolton 034,Kearsley & Stoneclough,Farnworth/Kearsley,100
+E02001018,Bolton 035,Westhoughton Daisy Hill,Westhoughton,100
+NA,Bolton,NA,Bolton,100
