@@ -25,7 +25,7 @@ library(leaflet.extras)
   neighbourhood_boundaries <- readRDS("./bolton_neighbourhoods/neighbourhood boundaries.RDS") # in the app folder
 
 # data
-  #neighbourhood_data <- 
+  neighbourhood_data <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS")
   local_health_data_msoa <- readRDS("./bolton_neighbourhoods/local health data with boundaries.RDS") # in the app folder
   neighbourhood_indicators <- readRDS("./bolton_neighbourhoods/dashboard_indicators.RDS")
   
@@ -148,7 +148,7 @@ library(leaflet.extras)
     rm(local_health_borough)
 
 # MSOA best fit (local health doesn't go down to lsoa)
-  mosa_neighbourhood <- readRDS("msoas_neighbourhood.RDS")
+  msoa_neighbourhood <- readRDS("msoas_neighbourhood.RDS")
 # includes value for Bolton to keep whole borough value
 
   # add in neighbourhood
@@ -169,50 +169,50 @@ library(leaflet.extras)
         
 ####### transform to neighbourhood level ##############################################################
 
-# combine by neighbourhood for those indicators with a count & denominator     
-  count_denom_indicators <- bolton_local_health2 %>%
-    group_by(DomainID, DomainName, IndicatorID, IndicatorName, Sex, Age, Timeperiod, TimeperiodSortable, neighbourhood) %>%
-    summarise(Count = sum(Count), 
-              Denominator = sum(Denominator)) %>%
-    filter(!is.na(Count)) %>%
-    mutate(pct_value = Count/Denominator*100) 
-
-  count_denom_indicators2 <- left_join(
-    count_denom_indicators %>%
-      ungroup() %>%
-      filter(neighbourhood != "Bolton"),
-    count_denom_indicators %>%
-      ungroup() %>%
-      filter(neighbourhood == "Bolton") %>%
-      select(IndicatorID, Sex, Age, TimeperiodSortable, pct_value),
-    by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable"),
-    suffix = c("_neighbourhood", "_bolton")
-  )
-
-# save for dashboard
-  saveRDS(count_denom_indicators2 %>% ungroup(), "./bolton_neighbourhoods/dashboard_indicators.RDS")
-
-# View indicators
-
-  bolton_local_health %>%
-    select(IndicatorID, IndicatorName) %>%
-    left_join(local_health_indicators %>% 
-                select(IndicatorID, DomainID, DomainName, ProfileID, ProfileName),
-              by = "IndicatorID") %>%
-    filter(ProfileID == 143) %>% # local health profile = 143, some indicators are in multiple
-    unique() %>%
-    arrange(ProfileID, DomainID) %>%
-    View()
-  # fwrite("C:/Temp/temp.csv")
-
-# MSOA level for map
-
-  bolton_local_health_msoa_boundaries <-  right_join(msoa_boundaries, # right join to keep geometry
-                                                     bolton_local_health2,
-                                                     by = c("msoa11cd" = "AreaCode")
-                                                    )
-  
-  saveRDS(bolton_local_health_msoa_boundaries, "local health data with boundaries.RDS")
+# # combine by neighbourhood for those indicators with a count & denominator     
+#   count_denom_indicators <- bolton_local_health2 %>%
+#     group_by(DomainID, DomainName, IndicatorID, IndicatorName, Sex, Age, Timeperiod, TimeperiodSortable, neighbourhood) %>%
+#     summarise(Count = sum(Count), 
+#               Denominator = sum(Denominator)) %>%
+#     filter(!is.na(Count)) %>%
+#     mutate(pct_value = Count/Denominator*100) 
+# 
+#   count_denom_indicators2 <- left_join(
+#     count_denom_indicators %>%
+#       ungroup() %>%
+#       filter(neighbourhood != "Bolton"),
+#     count_denom_indicators %>%
+#       ungroup() %>%
+#       filter(neighbourhood == "Bolton") %>%
+#       select(IndicatorID, Sex, Age, TimeperiodSortable, pct_value),
+#     by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable"),
+#     suffix = c("_neighbourhood", "_bolton")
+#   )
+# 
+# # save for dashboard
+#   saveRDS(count_denom_indicators2 %>% ungroup(), "./bolton_neighbourhoods/dashboard_indicators.RDS")
+# 
+# # View indicators
+# 
+#   bolton_local_health %>%
+#     select(IndicatorID, IndicatorName) %>%
+#     left_join(local_health_indicators %>% 
+#                 select(IndicatorID, DomainID, DomainName, ProfileID, ProfileName),
+#               by = "IndicatorID") %>%
+#     filter(ProfileID == 143) %>% # local health profile = 143, some indicators are in multiple
+#     unique() %>%
+#     arrange(ProfileID, DomainID) %>%
+#     View()
+#   # fwrite("C:/Temp/temp.csv")
+# 
+# # MSOA level for map
+# 
+#   bolton_local_health_msoa_boundaries <-  right_join(msoa_boundaries, # right join to keep geometry
+#                                                      bolton_local_health2,
+#                                                      by = c("msoa11cd" = "AreaCode")
+#                                                     )
+#   
+#   saveRDS(bolton_local_health_msoa_boundaries, "local health data with boundaries.RDS")
 
   
 # combine indicators but keep msoa level so can have 1 dataset
@@ -229,7 +229,7 @@ library(leaflet.extras)
     ungroup() %>%
     # bolton min & max
     group_by(IndicatorID, Sex, Age, TimeperiodSortable) %>%
-    mutate(bolton_min = max(Value),
+    mutate(bolton_min = min(Value),
            bolton_max = max(Value))
   
   # pivot to get bolton values in a different column
@@ -245,6 +245,8 @@ library(leaflet.extras)
     by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable"),
     suffix = c("_neighbourhood", "_bolton")
   )
+  
+  msoa_boundaries <- readRDS("msoa boundaries.RDS")
   
     # add msoa boundary
   nbourhood_indicators3 <- right_join(msoa_boundaries %>%

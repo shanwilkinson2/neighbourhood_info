@@ -12,7 +12,7 @@
     library(leaflet.extras)
 
 # load static datasets
-    data_refresh_date <- "23/06/2021"
+    data_refresh_date <- "24/06/2021"
 
     neighbourhood_names <- c("Breightmet/Little Lever", "Central/Great Lever", "Chorley Roads", 
                              "Crompton/Halliwell", "Farnworth/Kearsley", "Horwich",
@@ -28,7 +28,10 @@
       group_by(IndicatorID, Sex, Age, neighbourhood) %>%
       slice(1) %>% # first row only per neighbourhood, so will give neighbourood values as same for every msoa in the neighbourhood
       ungroup() %>%
-      select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name))
+      select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name)) %>%
+      mutate(across(.cols = nbourhood_pct:bolton_max, 
+                    .fns = ~round(.x, 1)
+      ))
     
     # single dataset filtered for msoa only
     msoa_data <- neighbourhood_indicators %>%
@@ -115,6 +118,7 @@ ui <-  dashboardPage(skin = "yellow",
                     h2("Interim issues while this tool is under development"),
                     p("Columns named as 'neighbourhood calculated value' relate to those where the data is provided as a numerator & denominator, which is then combined to create a % for the neighbourood. Some of these indicators are not percentages so look dodgy."), 
                     p("Columns named as 'neighbourhood average, min or max' give the median, minimum & maximum of the values for MSOAs falling within that neighbourhood."),
+                    p("Columns marked as 'Bolton min or max' give the minimum and maximum values out of all Bolton MSOAs."),
                     br(),
                     h2("Code"),
                     p("The code for this app is on my github."),
@@ -153,13 +157,13 @@ server <- function(input, output) {
             # filtered_data() %>%
             filter(neighbourhood == input$select_neighbourhood & 
                        DomainName == input$select_domain) %>%
-            mutate(across(.cols = nbourhood_pct:bolton_value, 
-                          .fns = ~round(.x, 1)
-                            )) %>%
-            select(IndicatorName, nbourhood_pct:bolton_value) %>%
-            rename(`Indicator name` = IndicatorName, `Nbourhood calculated value` = nbourhood_pct, 
-                   `Nbourhood average` = nbourhood_median, `Nbourhood min` = nbourhood_min, `Nbourhood max` = nbourhood_max, 
-                   `Bolton value` = bolton_value)
+            # mutate(across(.cols = nbourhood_pct:bolton_max, 
+            #               .fns = ~round(.x, 1)
+            #                 )) %>%
+            select(IndicatorName, nbourhood_pct:bolton_max) %>%
+            rename(`Indicator name` = IndicatorName, `N'b'hood calculated value` = nbourhood_pct, 
+                   `N'b'hood average` = nbourhood_median, `N'b'hood min` = nbourhood_min, `N'b'hood max` = nbourhood_max, 
+                   `Bolton value` = bolton_value, `Bolton min` = bolton_min, `Bolton max` = bolton_max)
     })
 
 
