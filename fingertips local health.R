@@ -10,7 +10,7 @@ library(dplyr)
 library(shinycssloaders)
 library(fingertipsR)
 library(data.table)
-# library(nomisr)
+library(nomisr)
 library(readxl)
 library(sf)
 library(leaflet)
@@ -18,23 +18,11 @@ library(leaflet.extras)
 
 #################### read in datasets created below ###############
 
-# ensure working directory is the upper folder neighbourhood_info
-
-# boundaries
-  msoa_boundaries <- readRDS("msoa boundaries.RDS")
-  neighbourhood_boundaries <- readRDS("./bolton_neighbourhoods/neighbourhood boundaries.RDS") # in the app folder
-
-# data
-  #neighbourhood_data <- 
-  local_health_data_msoa <- readRDS("./bolton_neighbourhoods/local health data with boundaries.RDS") # in the app folder
-  neighbourhood_indicators <- readRDS("./bolton_neighbourhoods/dashboard_indicators.RDS")
-  
-  # hopefully single dataset to replace the 2 above
-  neighbourhood_indicators <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS") # in the app folder
-
-  # lookups
-    lsoa_neighbourhood <- readRDS("lsoa_neighbourhood.rds")
-    msoa_neighbourhood <- readRDS("msoas_neighbourhood.rds")
+msoa_boundaries <- readRDS("msoa boundaries.RDS")
+neighbourhood_boundaries <- readRDS("neighbourhood boundaries.RDS")
+local_health_data_msoa <- readRDS("local health data with boundaries.RDS")
+lsoa_neighbourhood <- readRDS("lsoa_neighbourhood.rds")
+msoa_neighbourhood <- readRDS("msoas_neighbourhood.rds")
 
 ###################### boundaries ################################
 
@@ -190,7 +178,7 @@ library(leaflet.extras)
   )
 
 # save for dashboard
-  saveRDS(count_denom_indicators2 %>% ungroup(), "./bolton_neighbourhoods/dashboard_indicators.RDS")
+  saveRDS(count_denom_indicators2 %>% ungroup(), "G:/Mapping Data/R/neighbourhood profiles/bolton_neighbourhoods/dashboard_indicators.RDS")
 
 # View indicators
 
@@ -225,35 +213,26 @@ library(leaflet.extras)
            nbourhood_median = median(Value),
            nbourhood_max = max(Value),
            nbourhood_min = min(Value)
-           ) %>%
-    ungroup() %>%
-    # bolton min & max
-    group_by(IndicatorID, Sex, Age, TimeperiodSortable) %>%
-    mutate(bolton_min = max(Value),
-           bolton_max = max(Value))
+           ) 
   
-  # pivot to get bolton values in a different column
+  # pivot to get bolton value in a different column
   nbourhood_indicators2 <- left_join(
     nbourhood_indicators %>%
       ungroup() %>%
-      filter(neighbourhood != "Bolton") %>%
-      select(-c(bolton_min, bolton_max)),
+      filter(neighbourhood != "Bolton"),
     nbourhood_indicators %>%
       ungroup() %>%
       filter(neighbourhood == "Bolton") %>%
-      select(IndicatorID, Sex, Age, TimeperiodSortable, bolton_value = nbourhood_median, bolton_min, bolton_max),
+      select(IndicatorID, Sex, Age, TimeperiodSortable, bolton_value = nbourhood_median),
     by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable"),
     suffix = c("_neighbourhood", "_bolton")
-  )
-  
-    # add msoa boundary
-  nbourhood_indicators3 <- right_join(msoa_boundaries %>%
-                                      select(msoa11cd), # only want the join field & geometry whcih sticks anyway
-                                      nbourhood_indicators2, # right join to keep geometry
-               by = c("msoa11cd" = "msoa_code")
+  ) %>%
+    right_join(# right join to keep geometry
+               bolton_local_health2,
+               by = c("msoa11cd" = "AreaCode")
     )
   
-saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods/neighbourhood_indicators.RDS") # save it in the app folder
+
 
 ##################### map ###############################
 
