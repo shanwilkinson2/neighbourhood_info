@@ -10,7 +10,7 @@ library(dplyr)
 library(shinycssloaders)
 library(fingertipsR)
 library(data.table)
-library(nomisr)
+#library(nomisr)
 library(readxl)
 library(sf)
 library(leaflet)
@@ -26,8 +26,8 @@ library(leaflet.extras)
 
 # data
   neighbourhood_data <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS")
-  local_health_data_msoa <- readRDS("./bolton_neighbourhoods/local health data with boundaries.RDS") # in the app folder
-  neighbourhood_indicators <- readRDS("./bolton_neighbourhoods/dashboard_indicators.RDS")
+  #local_health_data_msoa <- readRDS("./bolton_neighbourhoods/local health data with boundaries.RDS") # in the app folder
+  #neighbourhood_indicators <- readRDS("./bolton_neighbourhoods/dashboard_indicators.RDS")
   
   # hopefully single dataset to replace the 2 above
   neighbourhood_indicators <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS") # in the app folder
@@ -35,7 +35,8 @@ library(leaflet.extras)
   # lookups
     lsoa_neighbourhood <- readRDS("lsoa_neighbourhood.rds")
     msoa_neighbourhood <- readRDS("msoas_neighbourhood.rds")
-
+    msoa_neighbourhood_multiple <- fread("msoas_neighbourhood_multiple.csv")
+    
 ###################### boundaries ################################
 
 # # Bolton boundary - not actually using this
@@ -150,6 +151,8 @@ library(leaflet.extras)
 # MSOA best fit (local health doesn't go down to lsoa)
   msoa_neighbourhood <- readRDS("msoas_neighbourhood.RDS")
 # includes value for Bolton to keep whole borough value
+  # version where MSOAs appear in more than 1 neighbourhood
+  msoa_neighbourhood_multiple <- readRDS("msoas_neighbourhood_multiple.csv")
 
   # add in neighbourhood
     bolton_local_health2 <- left_join(local_health, msoa_neighbourhood, 
@@ -166,6 +169,21 @@ library(leaflet.extras)
       arrange(ProfileID, DomainID) %>%
       group_by(IndicatorID, Sex, Age, neighbourhood)
 
+    
+    # add in neighbourhood using multiple file
+    bolton_local_health2 <- full_join(local_health, msoa_neighbourhood_multiple, 
+                                      by = c("AreaName"= "msoa_name")) %>%
+      # keep latest value only - only seems to include latest anyway
+      group_by(IndicatorID, Sex, Age, AreaName) %>%
+      filter(TimeperiodSortable == max(TimeperiodSortable)) %>%
+      ungroup() %>%
+      # add in domain ie part of the profile 
+      left_join(local_health_indicators %>% 
+                  select(IndicatorID, DomainID, DomainName, ProfileID, ProfileName),
+                by = "IndicatorID") %>%
+      filter(ProfileID == 143) %>% # local health profile = 143, some indicators are in multiple
+      arrange(ProfileID, DomainID) %>%
+      group_by(IndicatorID, Sex, Age, neighbourhood)  
         
 ####### transform to neighbourhood level ##############################################################
 
@@ -207,12 +225,12 @@ library(leaflet.extras)
 
 # MSOA level for map
 
-  bolton_local_health_msoa_boundaries <-  right_join(msoa_boundaries, # right join to keep geometry
-                                                     bolton_local_health2,
-                                                     by = c("msoa11cd" = "AreaCode")
-                                                    )
-  
-  saveRDS(bolton_local_health_msoa_boundaries, "local health data with boundaries.RDS")
+  # bolton_local_health_msoa_boundaries <-  right_join(msoa_boundaries, # right join to keep geometry
+  #                                                    bolton_local_health2,
+  #                                                    by = c("msoa11cd" = "AreaCode")
+  #                                                   )
+  # 
+  # saveRDS(bolton_local_health_msoa_boundaries, "local health data with boundaries.RDS")
 
   
 # combine indicators but keep msoa level so can have 1 dataset
@@ -252,12 +270,15 @@ library(leaflet.extras)
                                       select(msoa11cd), # only want the join field & geometry whcih sticks anyway
                                       nbourhood_indicators2, # right join to keep geometry
                by = c("msoa11cd" = "msoa_code")
-  ) %>%
-    right_join(# right join to keep geometry
-               bolton_local_health2,
-               by = c("msoa11cd" = "AreaCode")
-    )
+  )
+  # ) %>%
+  #   right_join(# right join to keep geometry
+  #              bolton_local_health2,
+  #              by = c("msoa11cd" = "AreaCode")
+  #   )
   
+# save fo app
+  saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods/neighbourhood_indicators.RDS")
 
 
 ##################### map ###############################
