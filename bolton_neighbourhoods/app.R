@@ -12,7 +12,7 @@
     library(leaflet.extras)
 
 # load static datasets
-    data_refresh_date <- "24/06/2021"
+    data_refresh_date <- "30/06/2021"
 
     neighbourhood_names <- c("Breightmet/Little Lever", "Central/Great Lever", "Chorley Roads", 
                              "Crompton/Halliwell", "Farnworth/Kearsley", "Horwich",
@@ -112,7 +112,7 @@ ui <-  dashboardPage(skin = "yellow",
                     a("PHE Local Health profiles", href = "https://fingertips.phe.org.uk/profile/local-health", 
                       target = "_blank"),
                     p("Local Health only goes down to MSOA (Middle Super Output Area) whereas Bolton's Neighbourhoods are built of LSOAs (Lower Super Output Areas) which have different boundaries."),
-                    p("MSOAs have been used to approximate neighbourhoods, based on the Neighbourhood in which most population falls. The slight difference in boundaries is visible on the map."), 
+                    p("MSOAs have been used to approximate neighbourhoods. MSOAs are included in every neighbourhood in which they at least partly fall. The difference in boundaries is visible on the map."), 
                     p(glue::glue("Data last refreshed: {data_refresh_date}")),
                     br(),
                     h2("Interim issues while this tool is under development"),
@@ -160,7 +160,7 @@ server <- function(input, output) {
             # mutate(across(.cols = nbourhood_pct:bolton_max, 
             #               .fns = ~round(.x, 1)
             #                 )) %>%
-            select(IndicatorName, nbourhood_pct:bolton_max) %>%
+            select(IndicatorName, nbourhood_pct:bolton_value) %>%
             rename(`Indicator name` = IndicatorName, `N'b'hood calculated value` = nbourhood_pct, 
                    `N'b'hood average` = nbourhood_median, `N'b'hood min` = nbourhood_min, `N'b'hood max` = nbourhood_max, 
                    `Bolton value` = bolton_value, `Bolton min` = bolton_min, `Bolton max` = bolton_max)
