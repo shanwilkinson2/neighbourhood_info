@@ -10,6 +10,7 @@
     library(sf)
     library(leaflet)
     library(leaflet.extras)
+    library(plotly)
 
 # load static datasets
     data_refresh_date <- "30/06/2021"
@@ -29,7 +30,8 @@
       slice(1) %>% # first row only per neighbourhood, so will give neighbourood values as same for every msoa in the neighbourhood
       ungroup() %>%
       select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name)) %>%
-      mutate(across(.cols = nbourhood_pct:bolton_max, 
+      relocate(nbourhood_min, .before = nbourhood_max) %>%
+      mutate(across(.cols = nbourhood_pct:bolton_value, 
                     .fns = ~round(.x, 1)
       ))
     
@@ -101,10 +103,19 @@ ui <-  dashboardPage(skin = "yellow",
             
             # chart
             tabItem(tabName = "chart_tab",
-                    #h2(textOutput("selected_neighbourhood")), # makes all reactive stuff not show
-                    #textOutput("selected_indicator"),
-                    p("Chart showing neighbourhood range vs Bolton on selected indicator.")
-            ),
+                    h3("Visualising the difference between neighbourhoods & Bolton"),
+                    br(),
+                    plotlyOutput("boxplot"),
+                    DT::DTOutput("boxplot_table"),
+                    br(),
+                    h3("How to interpret this chart"),
+                    p("This chart shows how the neighbourhood values compare to Bolton as a whole."),
+                    p("It shows the overall value (the notch), lowest value (left end of the bar) & highest value (right end of the bar) on the chosen indicator for the chosen neighbourhood & Bolton as a whole."),
+                    p("A neighbourhood notch much further left than the Bolton notch shows the neighbourhood is at the low end for Bolton on this indicator, while a neighbourhood notch much further right than the Bolton notch shows the neighbourhood is at the high end for Bolton."),
+                    p("But look at the numbers at the bottom of the chart - it may be that the whole of Bolton is quite similar on an indicator & differences may not be big enough to be useful in the real world."),
+                    p("Is the neighbourhoood bar narrow? This indicates the whole neighbourhood is quite similar on this indicator."),
+                    p("A wide bar suggests a neighbourhood with a lot of variation on this indicator. Check out the map for this indicator to find out more about where the variation is.")
+                    ),
             
             # map
             tabItem(tabName = "map",
@@ -117,7 +128,7 @@ ui <-  dashboardPage(skin = "yellow",
             tabItem(tabName = "about",
                     h2("Data source"),
                     p("Data is sourced from PHE fingertips local health dashboard. This gives more information about where the indicators come from."),
-                    a("PHE Local Health profiles", href = "https://fingertips.phe.org.uk/profile/local-health", 
+                    a("PHE Local Health profiles", href = "https://fingertips.phe.org.uk/profile/local-health/data#page/0/gid/1938133180/pat/402/par/E08000001/ati/3/iid/93744/age/28/sex/4/cid/4/tbm/1", 
                       target = "_blank"),
                     p("Local Health only goes down to MSOA (Middle Super Output Area) whereas Bolton's Neighbourhoods are built of LSOAs (Lower Super Output Areas) which have different boundaries."),
                     p("MSOAs have been used to approximate neighbourhoods. MSOAs are included in every neighbourhood in which they at least partly fall. The difference in boundaries is visible on the map."), 
@@ -202,6 +213,7 @@ server <- function(input, output) {
             na.color = "white")
     })
     
+    # map itself
     output$indicator_map <- renderLeaflet({
         map_data() %>%
         filter(neighbourhood == input$select_neighbourhood) %>%
@@ -217,8 +229,57 @@ server <- function(input, output) {
                     labelOptions = labelOptions(
                         style = list("font-weight" = "normal", padding = "3px 8px"),
                         textsize = "15px",
-                        direction = "auto"))
+                        direction = "auto")) %>%
+        addLegend(
+          "bottomright",
+          pal = msoa_pal(),
+          values = ~Value,
+          labFormat = labelFormat(digits = 0),
+          title = "Area values",
+          opacity = 1
+        )
     })
+    
+    # reactive dataset for boxplot
+    # includes all neighbourhoods here for indicator palatte
+    boxplot_data <- reactive({
+      neighbourhood_data %>%
+        filter(IndicatorName == input$select_indicator &
+                 neighbourhood == input$select_neighbourhood) 
+    })
+    
+    # boxplot to show how neighbourhood value & range compares with Bolton
+    output$boxplot <- renderPlotly({
+      boxplot_data() %>%
+      plot_ly() %>%
+        add_trace(type = "box",
+                  y = list("Bolton", boxplot_data()$neighbourhood),
+                  q1 = list(boxplot_data()$bolton_min, boxplot_data()$nbourhood_min),
+                  # calculated value if it's available otherwise median
+                  median = list(boxplot_data()$bolton_value,
+                                ifelse(is.na(boxplot_data()$nbourhood_pct), 
+                                       boxplot_data()$nbourhood_median,
+                                       boxplot_data()$nbourhood_pct)
+                  ),
+                  q3 = list(boxplot_data()$bolton_max, boxplot_data()$nbourhood_max),
+                  notchspan = list(0.3, 0.3),
+                  #hovertemplate = "some text {boxplot_data()$bolton_max}",
+                  #hovertext = ~chart_data$nbourhood_count,
+                  color = "orange"
+        ) %>%
+        layout(title = boxplot_data()$IndicatorName,
+               xaxis = list(hoverformat = ".1f",
+                            title = "Area overall value & maximum & minimum"))
+    })
+    
+    # create table
+    output$boxplot_table <- DT::renderDT({
+      boxplot_data() %>%
+        select(`N'b'hood calculated value` = nbourhood_pct, `N'b'hood average` = nbourhood_median, 
+               `N'b'hood min`= nbourhood_min, `N'b'hood max` = nbourhood_max, 
+               `Bolton min` = bolton_min, `Bolton max` = bolton_max, `Bolton value` = bolton_value)
+    }, filter = "top", rownames = FALSE)
+    
 }
 
 ##########################################################################################################

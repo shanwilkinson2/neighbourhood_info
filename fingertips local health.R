@@ -369,8 +369,28 @@ chart_data <- neighbourhood_indicators %>%
             color = "orange"
     ) %>%
     layout(title = indicator_name,
-           xaxis = list(hoverformat = ".1f"))
+           xaxis = list(hoverformat = ".1f",
+                        title = "Area overall value & maximum & minimum"))
   
+  chart_data %>%
+  plot_ly() %>%
+    add_trace(type = "box",
+              y = list("Bolton", "Neighbourhood"),
+              q1 = ~list(bolton_min, nbourhood_min),
+              # calculated value if it's available otherwise median
+              median = ~list(bolton_value,
+                            ifelse(is.na(nbourhood_pct), 
+                                   nbourhood_median,
+                                   nbourhood_pct)
+              ),
+              q3 = ~list(bolton_max, nbourhood_max),
+              notchspan = list(0.3, 0.3),
+             # hovertext = ~chart_data$nbourhood_count,
+              color = "orange"
+    ) %>%
+    layout(title = ~IndicatorName,
+           xaxis = list(hoverformat = ".1f",
+                        title = "Area overall value & maximum & minimum"))
 
 
 ###################### nomis ##########################
