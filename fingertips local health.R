@@ -323,12 +323,16 @@ library(plotly)
 
 neighbourhood_indicators <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS") # in the app folder
 
+neighbourhood_name <- "Turton"
+neighbourhood_name <- "Central/Great Lever"
+neighbourhood_name <- "Chorley Roads"
+
+indicator_name <- "Percentage of the total resident population who are 65 and over"
+
 chart_data <- neighbourhood_indicators %>%
   st_drop_geometry() %>%
-  filter(#neighbourhood == "Chorley Roads" &
-           # neighbourhood == "Turton" &
-             neighbourhood == "Central/Great Lever" &   
-           IndicatorName == "Percentage of the total resident population who are 65 and over") %>%
+  filter(neighbourhood == neighbourhood_name &   
+           IndicatorName == indicator_name) %>%
   #group_by(neighbourhood) %>%
   slice(1) 
 
@@ -344,6 +348,28 @@ chart_data <- neighbourhood_indicators %>%
               upperfence = chart_data$bolton_max,
               notchspan = 0.3
               )
+  
+  # chart
+  plot_ly() %>%
+    add_trace(type = "box",
+              y = list("Bolton", "Neighbourhood"),
+              q1 = list(chart_data$bolton_min, chart_data$nbourhood_min),
+              # calculated value if it's available otherwise median
+              median = list(chart_data$bolton_value,
+                ifelse(is.na(chart_data$nbourhood_pct), 
+                                   chart_data$nbourhood_median,
+                                   chart_data$nbourhood_pct)
+                            ),
+              q3 = list(chart_data$bolton_max, chart_data$nbourhood_max),
+             #min = list(chart_data$bolton_min, chart_data$nbourhood_min),
+            #  upperfence = chart_data$bolton_max,
+              notchspan = list(0.3, 0.3),
+            #hovertemplate = "some text {chart_data$bolton_max}",
+           hovertext = ~chart_data$nbourhood_count,
+            color = "orange"
+    ) %>%
+    layout(title = indicator_name,
+           xaxis = list(hoverformat = ".1f"))
   
 
 
