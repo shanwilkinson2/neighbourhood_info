@@ -18,6 +18,10 @@
     neighbourhood_names <- c("Breightmet/Little Lever", "Central/Great Lever", "Chorley Roads", 
                              "Crompton/Halliwell", "Farnworth/Kearsley", "Horwich",
                              "Rumworth", "Turton", "Westhoughton")
+    
+    # neighbourhood/ msoa lookup table
+    msoa_neighbourhood_multiple <- readRDS("msoa_neighbourhood_multiple.RDS")
+    
     neighbourhood_boundaries <- readRDS("neighbourhood boundaries.RDS")
     
     # msoa data with summary & boundaries - single dataset to load for both neighbourhood & msoa level
@@ -80,7 +84,8 @@ ui <-  dashboardPage(skin = "yellow",
             tabItem(tabName = "using",
                     h2("What is this?"),
                     p("This tool was developed by Bolton Council's public health intelligence team. It gives some information about the populations in Bolton's integrated care neighbourhoods & factors affecting their current & future health."),
-                    p("It has been developed by combining data already avalable at small area level."),
+                    p("It has been developed by combining data already available at small area level."),
+                    p("Public Health England's Local Health profile forms the basis as it is a collection of quality assured information covering: population & demographic factors; wider determinants of health; health outcomes."),
                     br(),
                     h2("What should I do with this?"),
                     p("Consider questions such as:"),
@@ -91,7 +96,15 @@ ui <-  dashboardPage(skin = "yellow",
                     p("What decisions do you need to make? What information do you need to determine direction of travel & choose between options?"),
                     p("The information you need will most likely involve using data, evidence & intelligence alongside your professional judgement of what is feasible within your constraints & most likely to be successful."),
                     p("Often the perfect piece of information won't be available, do you have enough? Sometimes you won't feel you have enough but will still have to make a decision."),
-                    p("More data, evidence & intelligence always raises more questions, that's good! Use it to develop & test your questions & assumptions which hopepfully will help you make better decisions.")
+                    p("More data, evidence & intelligence always raises more questions, that's good! Use it to develop & test your questions & assumptions which hopefully will help you make better decisions."),
+                    br(),
+                    h2("How do I use this?"),
+                    p("This tool presents information on a range of indicators in a range of ways to help you explore different aspects of a neighbourhood, such as how a neighbourhood compares to Bolton as a whole & how much variation there is within a neighbourhood."),
+                    p("Select a neighbourhood, domain & indicator (indicator not needed for the table) from the dropdowns on the left."),
+                    p("The table shows all information in a traditional spreadsheet format."),
+                    p("The chart shows how the neighbourhood values compare to Bolton as a whole."),
+                    p("The map shows variation within the neighbourhood."),
+                    p("Use the different formats to explore the data & inform your decision making.")
             ),
                     
             # tab1
@@ -152,10 +165,14 @@ ui <-  dashboardPage(skin = "yellow",
                     p("The code for this app is on my github."),
                     a("Github", href = "https://github.com/shanwilkinson2/neighbourhood_info", 
                       target = "_blank"),
+                    br(),
+                    h2("MSOA neighbourhood lookup"),
+                    DT::DTOutput("msoa_neighbourhood_lookup")
             )
         )
     )
 )
+
 
 ##########################################################################################################
 
@@ -198,7 +215,14 @@ server <- function(input, output) {
     # create table
     output$table1 <- DT::renderDT({
         table_data()
-   }, filter = "top", rownames = FALSE)
+   }, 
+    filter = "top", 
+    rownames = FALSE,
+    extensions = "Buttons", 
+   options = list(dom = "Bprti", # order of buttons/ filter etc
+                  buttons = c("copy", "csv", "excel"))
+   
+   )
     
     # reactive dataset for map
     # includes all neighbourhoods here for indicator palatte
@@ -293,6 +317,23 @@ server <- function(input, output) {
                `N'b'hood min`= nbourhood_min, `N'b'hood max` = nbourhood_max, 
                `Bolton min` = bolton_min, `Bolton max` = bolton_max, `Bolton value` = bolton_value)
     }, filter = "top", rownames = FALSE)
+    
+    # create table
+    output$msoa_neighbourhood_lookup <- DT::renderDT({
+      msoa_neighbourhood_multiple %>%
+        rename(`MSOA code` = msoa_code, 
+               `MSOA name` = msoa_name,
+               `MSOA House of Commons Library name` = hoc_msoa_name,
+               Neighbourhood = neighbourhood, 
+               `% of 2019 population in neighbourhood` = pct_of_lsoa)
+    }, 
+    filter = "top", 
+    rownames = FALSE,
+    extensions = "Buttons", 
+    options = list(dom = "Bprti", # order of buttons/ filter etc
+                   buttons = c("copy", "csv", "excel"))
+    
+    )
     
 }
 

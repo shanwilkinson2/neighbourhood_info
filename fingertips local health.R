@@ -37,6 +37,8 @@ library(leaflet.extras)
     #msoa_neighbourhood <- readRDS("msoas_neighbourhood.rds")
     msoa_neighbourhood_multiple <- fread("msoas_neighbourhood_multiple.csv")
     
+    saveRDS(msoa_neighbourhood_multiple, "./bolton_neighbourhoods/msoa_neighbourhood_multiple.RDS") # in the app folder
+    
 ###################### boundaries ################################
 
 # # Bolton boundary - not actually using this
