@@ -34,7 +34,7 @@ library(leaflet.extras)
 
   # lookups
     lsoa_neighbourhood <- readRDS("lsoa_neighbourhood.rds")
-    msoa_neighbourhood <- readRDS("msoas_neighbourhood.rds")
+    #msoa_neighbourhood <- readRDS("msoas_neighbourhood.rds")
     msoa_neighbourhood_multiple <- fread("msoas_neighbourhood_multiple.csv")
     
 ###################### boundaries ################################

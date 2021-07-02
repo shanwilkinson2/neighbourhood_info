@@ -37,7 +37,7 @@
     
     # single dataset filtered for msoa only
     msoa_data <- neighbourhood_indicators %>%
-      select(neighbourhood, hoc_msoa_name, msoa11cd:IndicatorName, Value)
+      select(neighbourhood, AreaName, hoc_msoa_name, msoa11cd:IndicatorName, Value)
       
     
 #######################################################################
@@ -121,7 +121,16 @@ ui <-  dashboardPage(skin = "yellow",
             tabItem(tabName = "map",
                     #h2(textOutput("selected_neighbourhood")), # makes all reactive stuff not show
                     h3(textOutput("selected_indicator")),
-                    leafletOutput("indicator_map")
+                    leafletOutput("indicator_map"),
+                    br(),
+                    h3("How to interpret this map"),
+                    p("This map shows variation within the neighbourhood."),
+                    p("The orange boundary shows the neighbourhood boundary. The coloured areas show the smaller areas which are combined in this tool to give neighbourhood level information."),
+                    p("The boundaries don't quite match, you can see where they are different."),
+                    p("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicatos an area is low for Bolton on the chosen indicator."),
+                    p("A neighbourhood may be made up of all darker areas, or all lighter areas or a mix. If the neighbourhood is more similar overall on an indicator, the colours will be more simliar. Check out the chart for a clearer view of how the neighbourhood compares to Bolton as a whole."),
+                    p("Very different colours indicate where there may be pockets of difference."),
+                    p("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world.")
             ),
             
             # data sources
@@ -215,6 +224,10 @@ server <- function(input, output) {
     
     # map itself
     output$indicator_map <- renderLeaflet({
+      
+      mylabels <- as.list(glue::glue("{map_data()$AreaName}, {map_data()$hoc_msoa_name}<br>
+                                     Indicator value: {round(map_data()$Value)}"))
+      
         map_data() %>%
         filter(neighbourhood == input$select_neighbourhood) %>%
         leaflet() %>%
@@ -225,7 +238,8 @@ server <- function(input, output) {
                     weight = 0.75, color = "black", 
                     fillColor = ~msoa_pal()(Value), fillOpacity = 0.5, 
                     highlight = highlightOptions(weight = 4, color = "grey"),
-                    label = ~paste(hoc_msoa_name, round(Value)), 
+                    #label = lapply(mylabels, HTML),
+                    label = ~paste0(AreaName, ", ", hoc_msoa_name, ". Indicator value: ", round(Value)), 
                     labelOptions = labelOptions(
                         style = list("font-weight" = "normal", padding = "3px 8px"),
                         textsize = "15px",
