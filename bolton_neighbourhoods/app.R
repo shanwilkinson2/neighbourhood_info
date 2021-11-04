@@ -13,7 +13,7 @@
     library(plotly)
 
 # load static datasets
-    data_refresh_date <- "30/06/2021"
+    data_refresh_date <- "04/11/2021"
 
     neighbourhood_names <- c("Breightmet/Little Lever", "Central/Great Lever", "Chorley Roads", 
                              "Crompton/Halliwell", "Farnworth/Kearsley", "Horwich",

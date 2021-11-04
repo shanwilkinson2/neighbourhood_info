@@ -1,4 +1,4 @@
-# get & manipulate boundaries
+# get & manipulate boundaries - saved as static files
 
 library(dplyr)
 library(sf)

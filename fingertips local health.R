@@ -146,13 +146,20 @@ library(fingertipsR)
       by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable")
     )
   
+    # join in england
+    nbourhood_indicators2b <- left_join(nbourhood_indicators2, 
+                                        england_values %>%
+                                          rename("england_value"= "Value"),
+                                        by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable"), 
+                                        suffix = c("", "_england"))
   
-  msoa_boundaries <- readRDS("msoa boundaries.RDS")
+  # get msoa boundaries    
+    msoa_boundaries <- readRDS("msoa boundaries.RDS")
   
     # add msoa boundary
   nbourhood_indicators3 <- right_join(msoa_boundaries %>%
                                       select(msoa11cd), # only want the join field & geometry whcih sticks anyway
-                                      nbourhood_indicators2, # right join to keep geometry
+                                      nbourhood_indicators2b, # right join to keep geometry
                by = c("msoa11cd" = "msoa_code")
                  )
 
