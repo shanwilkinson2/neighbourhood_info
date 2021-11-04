@@ -12,10 +12,6 @@ library(fingertipsR)
 #library(data.table)
 #library(nomisr)
 #library(readxl)
-# library(sf)
-# library(leaflet)
-# library(leaflet.extras)
-
 
 ################# get data from phe fingertips local health #########################  
   
@@ -65,10 +61,6 @@ library(fingertipsR)
   # join msoa & borough data
     local_health <- bind_rows(local_health_msoa, local_health_borough)
 
-  # get rid of seperate files
-    rm(local_health_msoa)
-    rm(local_health_borough)
-# 
 # # MSOA best fit (local health doesn't go down to lsoa)
 #   msoa_neighbourhood <- readRDS("msoas_neighbourhood.RDS")
 # includes value for Bolton to keep whole borough value
@@ -117,10 +109,43 @@ library(fingertipsR)
     nbourhood_indicators %>%
       ungroup() %>%
       filter(neighbourhood == "Bolton") %>%
-      select(IndicatorID, Sex, Age, TimeperiodSortable, bolton_value = nbourhood_median),
+      select(IndicatorID, Sex, Age, TimeperiodSortable, bolton_value = nbourhood_median), # median will be the value as all bolton
     by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable"),
     suffix = c("_neighbourhood", "_bolton")
   )
+  
+  # get England values 
+  
+    # actual England figure
+    england_indicators <- local_health_all_msoa %>%
+      filter(AreaType == "England") %>%
+      # keep latest value only - only seems to include latest anyway
+      group_by(IndicatorID, Sex, Age) %>%
+      filter(TimeperiodSortable == max(TimeperiodSortable)) %>%
+      ungroup()
+
+    
+    # england MSOA max/min
+    england_min_max <- local_health_all_msoa %>%
+      filter(AreaType == "MSOA") %>%
+      # keep latest value only - only seems to include latest anyway
+      group_by(IndicatorID, Sex, Age) %>%
+      filter(TimeperiodSortable == max(TimeperiodSortable)) %>%
+      mutate(england_min = min(Value),
+             england_max = max(Value)) %>%
+      slice(1)
+    
+    # combined for joining
+    england_values <- full_join(
+      england_indicators %>%
+        select(IndicatorID, Sex, Age, TimeperiodSortable, Value)
+      ,
+      england_min_max %>%
+        select(IndicatorID, Sex, Age, TimeperiodSortable, england_min, england_max)
+      ,
+      by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable")
+    )
+  
   
   msoa_boundaries <- readRDS("msoa boundaries.RDS")
   
@@ -135,6 +160,11 @@ library(fingertipsR)
 # save for app
   saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods/neighbourhood_indicators.RDS")
 
+  
+# get rid of seperate & intermediate files
+  rm(local_health_msoa)
+  rm(local_health_borough)  
+  
 ###################### nomis ##########################
 
 # https://www.nomisweb.co.uk/api/v01/dataset/NM_2010_1.data.csv?geography=1249907237,1249907272,1249907273,1249907276,1249907277,1249907257,1249907259,1249907274,1249907275,1249907279,1249907238
