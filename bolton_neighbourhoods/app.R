@@ -291,15 +291,29 @@ server <- function(input, output) {
       boxplot_data() %>%
       plot_ly() %>%
         add_trace(type = "box",
-                  y = list("Bolton", boxplot_data()$neighbourhood),
-                  q1 = list(boxplot_data()$bolton_min, boxplot_data()$nbourhood_min),
+                  y = list(
+                    "England",
+                    "Bolton", 
+                    boxplot_data()$neighbourhood
+                    ),
+                  q1 = list(
+                    boxplot_data()$england_min,
+                    boxplot_data()$bolton_min, 
+                    boxplot_data()$nbourhood_min
+                    ),
                   # calculated value if it's available otherwise median
-                  median = list(boxplot_data()$bolton_value,
-                                ifelse(is.na(boxplot_data()$nbourhood_pct), 
-                                       boxplot_data()$nbourhood_median,
-                                       boxplot_data()$nbourhood_pct)
+                  median = list(
+                    boxplot_data()$england_value,
+                    boxplot_data()$bolton_value,
+                    ifelse(is.na(boxplot_data()$nbourhood_pct), 
+                           boxplot_data()$nbourhood_median,
+                           boxplot_data()$nbourhood_pct)
                   ),
-                  q3 = list(boxplot_data()$bolton_max, boxplot_data()$nbourhood_max),
+                  q3 = list(
+                    boxplot_data()$england_max,
+                    boxplot_data()$bolton_max, 
+                    boxplot_data()$nbourhood_max
+                    ),
                   notchspan = list(0.3, 0.3),
                   #hovertemplate = "some text {boxplot_data()$bolton_max}",
                   #hovertext = ~chart_data$nbourhood_count,

@@ -95,13 +95,17 @@ library(fingertipsR)
            nbourhood_pct = nbourhood_count/ nbourhood_denominator*100,
            nbourhood_median = median(Value),
            nbourhood_max = max(Value),
-           nbourhood_min = min(Value)
+           nbourhood_min = min(Value),
+           nbourhood_q1 = quantile(Value, 0.25, na.rm = TRUE),
+           nbourhood_q3 = quantile(Value, 0.75, na.rm = TRUE)
            ) %>%
     ungroup() %>%
     # bolton min & max
     group_by(IndicatorID, Sex, Age, TimeperiodSortable) %>%
     mutate(bolton_min = min(Value),
-           bolton_max = max(Value))
+           bolton_max = max(Value),
+           bolton_q1 = quantile(Value, 0.25, na.rm = TRUE),
+           bolton_q3 = quantile(Value, 0.75, na.rm = TRUE))
   
   # pivot to get bolton value in a different column
   nbourhood_indicators2 <- left_join(
@@ -134,7 +138,9 @@ library(fingertipsR)
       group_by(IndicatorID, Sex, Age) %>%
       filter(TimeperiodSortable == max(TimeperiodSortable)) %>%
       mutate(england_min = min(Value),
-             england_max = max(Value)) %>%
+             england_max = max(Value),
+             england_q1 = quantile(Value, 0.25, na.rm = TRUE),
+             england_q3 = quantile(Value, 0.75, na.rm = TRUE)) %>%
       slice(1)
     
     # combined for joining
@@ -143,7 +149,7 @@ library(fingertipsR)
         select(IndicatorID, Sex, Age, TimeperiodSortable, Value)
       ,
       england_min_max %>%
-        select(IndicatorID, Sex, Age, TimeperiodSortable, england_min, england_max)
+        select(IndicatorID, Sex, Age, TimeperiodSortable, england_min, england_max, england_q1, england_q3)
       ,
       by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable")
     )
