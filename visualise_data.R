@@ -121,3 +121,22 @@ chart_data %>%
   layout(title = ~IndicatorName,
          xaxis = list(hoverformat = ".1f",
                       title = "Area overall value & maximum & minimum"))
+
+### table for chart - want to have diff areas in diff rows. NOT WORKING YET
+
+neighbourhood_data <- neighbourhood_indicators %>%
+  st_drop_geometry() %>%
+  group_by(IndicatorID, Sex, Age, neighbourhood) %>%
+  slice(1) %>% # first row only per neighbourhood, so will give neighbourood values as same for every msoa in the neighbourhood
+  ungroup() %>%
+  select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name)) %>%
+  relocate(nbourhood_min, .before = nbourhood_max) %>%
+  mutate(across(.cols = nbourhood_pct:england_q3, 
+                .fns = ~round(.x, 1)
+  ))
+
+neighbourhood_data %>%
+  filter(IndicatorName == "Percentage of the total resident population who are 65 and over" &
+           neighbourhood == "Central/Great Lever") %>%
+select(area =)
+View()

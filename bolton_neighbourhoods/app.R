@@ -35,7 +35,7 @@
       ungroup() %>%
       select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name)) %>%
       relocate(nbourhood_min, .before = nbourhood_max) %>%
-      mutate(across(.cols = nbourhood_pct:bolton_value, 
+      mutate(across(.cols = nbourhood_pct:england_q3, 
                     .fns = ~round(.x, 1)
       ))
     
@@ -116,18 +116,23 @@ ui <-  dashboardPage(skin = "yellow",
             
             # chart
             tabItem(tabName = "chart_tab",
-                    h3("Visualising the difference between neighbourhoods & Bolton"),
+                    h3("Visualising the difference between neighbourhoods, Bolton & England"),
                     br(),
                     plotlyOutput("boxplot"),
+                    p("Table currently too wide pending update... sorry!"),
                     DT::DTOutput("boxplot_table"),
                     br(),
                     h3("How to interpret this chart"),
-                    p("This chart shows how the neighbourhood values compare to Bolton as a whole."),
-                    p("It shows the overall value (the notch), lowest value (left end of the bar) & highest value (right end of the bar) on the chosen indicator for the chosen neighbourhood & Bolton as a whole."),
-                    p("A neighbourhood notch much further left than the Bolton notch shows the neighbourhood is at the low end for Bolton on this indicator, while a neighbourhood notch much further right than the Bolton notch shows the neighbourhood is at the high end for Bolton."),
+                    p("This chart shows how the neighbourhood values compare to Bolton and England as a whole."),
+                    p("The overall value is the line inside the bar."),
+                    p("The whiskers show the values for the lowest and highest MSOAs within the area."),
+                    p("The bar shows the range that the middle half of MSOAs (the areas that this data is built up from) within this area fall within."),
+                    p("The whiskers and bar may be symmetrical or not. If most areas are high on an indicator, but some are much lower (or vice versa), the chart may not look at all symmetrical."),
+                    p("A neighbourhood bar & whiskers much further left than for Bolton shows the neighbourhood is at the low end for Bolton on this indicator, while a neighbourhood bar & whiskers much further right than the Bolton notch shows the neighbourhood is at the high end for Bolton."),
                     p("But look at the numbers at the bottom of the chart - it may be that the whole of Bolton is quite similar on an indicator & differences may not be big enough to be useful in the real world."),
                     p("Is the neighbourhoood bar narrow? This indicates the whole neighbourhood is quite similar on this indicator."),
-                    p("A wide bar suggests a neighbourhood with a lot of variation on this indicator. Check out the map for this indicator to find out more about where the variation is.")
+                    p("A wide bar suggests a neighbourhood with a lot of variation on this indicator. Check out the map for this indicator to find out more about where the variation is."),
+                    p("Compare Bolton & England in a similar way - Bolton may be much higher or lower than England, so an issue may still be important for a neighbourhood even if it is similar to the Bolton picture."),
                     ),
             
             # map
@@ -296,7 +301,11 @@ server <- function(input, output) {
                     "Bolton", 
                     boxplot_data()$neighbourhood
                     ),
-                  q1 = list(
+                  q1 = list(boxplot_data()$england_q1,
+                            boxplot_data()$bolton_q1, 
+                            boxplot_data()$nbourhood_q1
+                            ),
+                  lowerfence = list(
                     boxplot_data()$england_min,
                     boxplot_data()$bolton_min, 
                     boxplot_data()$nbourhood_min
@@ -309,7 +318,11 @@ server <- function(input, output) {
                            boxplot_data()$nbourhood_median,
                            boxplot_data()$nbourhood_pct)
                   ),
-                  q3 = list(
+                  q3 = list(boxplot_data()$england_q3,
+                            boxplot_data()$bolton_q3, 
+                            boxplot_data()$nbourhood_q3
+                            ),
+                  upperfence = list(
                     boxplot_data()$england_max,
                     boxplot_data()$bolton_max, 
                     boxplot_data()$nbourhood_max
@@ -321,15 +334,20 @@ server <- function(input, output) {
         ) %>%
         layout(title = boxplot_data()$IndicatorName,
                xaxis = list(hoverformat = ".1f",
-                            title = "Area overall value & maximum & minimum"))
+                            title = "Area values"))
     })
     
     # create table
     output$boxplot_table <- DT::renderDT({
       boxplot_data() %>%
-        select(`N'b'hood calculated value` = nbourhood_pct, `N'b'hood average` = nbourhood_median, 
-               `N'b'hood min`= nbourhood_min, `N'b'hood max` = nbourhood_max, 
-               `Bolton min` = bolton_min, `Bolton max` = bolton_max, `Bolton value` = bolton_value)
+        select(`N'b'hood min`= nbourhood_min, `N'b'hood 25%` = nbourhood_q1, `N'b'hood value` = nbourhood_pct, 
+               `N'b'hood average` = nbourhood_median, `N'b'hood 75%` = nbourhood_q3,
+               `N'b'hood max` = nbourhood_max, 
+               `Bolton min` = bolton_min, `Bolton 25%` = bolton_q1, `Bolton value` = bolton_value, 
+               `Bolton 75%` = bolton_q3, `Bolton max` = bolton_max, 
+               `England min` = england_min, `England 25%` = england_q1, `England Value` = england_value, 
+               `England 75%` = england_q3, `England max` = england_max
+               )
     }, filter = "top", rownames = FALSE)
     
     # create table
