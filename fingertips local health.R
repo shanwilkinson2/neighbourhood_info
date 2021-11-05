@@ -14,6 +14,8 @@ library(fingertipsR)
 #library(readxl)
 
 ################# get data from phe fingertips local health #########################  
+
+  # downloads data, adds boundaries, saves nbourhood_indicators3 as neighbourhood_indicators for app
   
 # local health 
 # https://fingertips.phe.org.uk/profile/local-health/data#page/0/gid/1938133180/ati/3/iid/93744/age/28/sex/4/cid/4/tbm/1
@@ -169,8 +171,11 @@ library(fingertipsR)
 
   
 # get rid of seperate & intermediate files
-  rm(local_health_msoa)
-  rm(local_health_borough)  
+   rm(bolton_local_health2, england_indicators, england_min_max, england_values, local_health, 
+     local_health_msoa, local_health_borough,
+     local_health_all_msoa, local_health_indicators, msoa_boundaries, msoa_neighbourhood_multiple,nbourhood_indicators,
+     nbourhood_indicators2, nbourhood_indicators2b, nbourhood_indicators3, bolton_area_codes
+     )
   
 ###################### nomis ##########################
 
