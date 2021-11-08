@@ -159,7 +159,12 @@ library(fingertipsR)
                                         england_values %>%
                                           rename("england_value"= "Value"),
                                         by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable"), 
-                                        suffix = c("", "_england"))
+                                        suffix = c("", "_england")) %>%
+      # give new indicator name for sex disaggregated indicators
+      mutate(IndicatorName = ifelse(!Sex %in% c("Persons", "Not applicable"), 
+                                    paste(IndicatorName, Sex, sep = " - "),
+                                    IndicatorName)
+      )
   
   # get msoa boundaries    
     msoa_boundaries <- readRDS("msoa boundaries.RDS")
