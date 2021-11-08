@@ -11,6 +11,7 @@
     library(leaflet)
     library(leaflet.extras)
     library(plotly)
+    library(magrittr)
 
 # load static datasets
     data_refresh_date <- "04/11/2021"
@@ -119,7 +120,7 @@ ui <-  dashboardPage(skin = "yellow",
                     h3("Visualising the difference between neighbourhoods, Bolton & England"),
                     br(),
                     plotlyOutput("boxplot"),
-                    p("Table currently too wide pending update... sorry!"),
+                    br(),
                     DT::DTOutput("boxplot_table"),
                     br(),
                     h3("How to interpret this chart"),
@@ -127,6 +128,7 @@ ui <-  dashboardPage(skin = "yellow",
                     p("The overall value is the line inside the bar."),
                     p("The whiskers show the values for the lowest and highest MSOAs within the area."),
                     p("The bar shows the range that the middle half of MSOAs (the areas that this data is built up from) within this area fall within."),
+                    p("The left edge of the bar shows Quartile 1/ the 25th percentile, this is the value that a quarter (25%) of values are lower than. The right edge of the bar shows Quartile 3/ the 75th perceentile, this is the value that three-quarters (75%) of values are lower than. The middle half therefore fall between these values."),
                     p("The whiskers and bar may be symmetrical or not. If most areas are high on an indicator, but some are much lower (or vice versa), the chart may not look at all symmetrical."),
                     p("A neighbourhood bar & whiskers much further left than for Bolton shows the neighbourhood is at the low end for Bolton on this indicator, while a neighbourhood bar & whiskers much further right than the Bolton notch shows the neighbourhood is at the high end for Bolton."),
                     p("But look at the numbers at the bottom of the chart - it may be that the whole of Bolton is quite similar on an indicator & differences may not be big enough to be useful in the real world."),
@@ -339,16 +341,34 @@ server <- function(input, output) {
     
     # create table
     output$boxplot_table <- DT::renderDT({
-      boxplot_data() %>%
-        select(`N'b'hood min`= nbourhood_min, `N'b'hood 25%` = nbourhood_q1, `N'b'hood value` = nbourhood_pct, 
-               `N'b'hood average` = nbourhood_median, `N'b'hood 75%` = nbourhood_q3,
-               `N'b'hood max` = nbourhood_max, 
-               `Bolton min` = bolton_min, `Bolton 25%` = bolton_q1, `Bolton value` = bolton_value, 
-               `Bolton 75%` = bolton_q3, `Bolton max` = bolton_max, 
-               `England min` = england_min, `England 25%` = england_q1, `England Value` = england_value, 
-               `England 75%` = england_q3, `England max` = england_max
-               )
-    }, filter = "top", rownames = FALSE)
+      boxplot_data() %$%
+      data.frame(Area = c(neighbourhood, "Bolton", "England")
+                 ,
+                 Min = c(nbourhood_min, 
+                         bolton_min, 
+                         england_min)
+                 ,
+                 `Quartile1` = c(nbourhood_q1, 
+                        bolton_q1, 
+                        england_q1)
+                 ,
+                 Value = c(ifelse(!is.na(nbourhood_pct), 
+                                  nbourhood_pct, 
+                                  nbourhood_median),
+                           bolton_value, 
+                           england_value)
+                 ,
+                 `Quartile3` = c(nbourhood_q3, 
+                        bolton_q3, 
+                        england_q3)
+                 ,
+                 Max = c(nbourhood_max, 
+                         bolton_max, 
+                         england_max)
+                 
+                 
+      )
+    }, rownames = FALSE)
     
     # create table
     output$msoa_neighbourhood_lookup <- DT::renderDT({

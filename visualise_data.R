@@ -124,6 +124,8 @@ chart_data %>%
 
 ### table for chart - want to have diff areas in diff rows. NOT WORKING YET
 
+library(sf)
+
 neighbourhood_data <- neighbourhood_indicators %>%
   st_drop_geometry() %>%
   group_by(IndicatorID, Sex, Age, neighbourhood) %>%
@@ -135,8 +137,62 @@ neighbourhood_data <- neighbourhood_indicators %>%
                 .fns = ~round(.x, 1)
   ))
 
-neighbourhood_data %>%
+neighbourhood_data2 <-neighbourhood_data %>%
   filter(IndicatorName == "Percentage of the total resident population who are 65 and over" &
-           neighbourhood == "Central/Great Lever") %>%
-select(area =)
-View()
+           neighbourhood == "Central/Great Lever") 
+
+neighbourhood_data3 <-data.frame(area = c(neighbourhood_data2$neighbourhood, "Bolton", "England")
+                                 ,
+                                 min = c(neighbourhood_data2$nbourhood_min, 
+                                         neighbourhood_data2$bolton_min, 
+                                         neighbourhood_data2$england_min)
+                                 ,
+                                 q1 = c(neighbourhood_data2$nbourhood_q1, 
+                                         neighbourhood_data2$bolton_q1, 
+                                         neighbourhood_data2$england_q1)
+                                 ,
+                                 value = c(ifelse(!is.na(neighbourhood_data2$nbourhood_pct), 
+                                                  neighbourhood_data2$nbourhood_pct, 
+                                                  neighbourhood_data2$nbourhood_median),
+                                           neighbourhood_data2$bolton_value, 
+                                           neighbourhood_data2$england_value)
+                                 ,
+                                 q3 = c(neighbourhood_data2$nbourhood_q3, 
+                                         neighbourhood_data2$bolton_q3, 
+                                         neighbourhood_data2$england_q3)
+                                 ,
+                                 max = c(neighbourhood_data2$nbourhood_max, 
+                                         neighbourhood_data2$bolton_max, 
+                                         neighbourhood_data2$england_max)
+                                 
+
+)
+
+library(magrittr)
+neighbourhood_data3 <-neighbourhood_data2 %$%
+  data.frame(area = c(neighbourhood, "Bolton", "England")
+                                 ,
+                                 min = c(nbourhood_min, 
+                                         bolton_min, 
+                                         england_min)
+                                 ,
+                                 q1 = c(nbourhood_q1, 
+                                        bolton_q1, 
+                                        england_q1)
+                                 ,
+                                 value = c(ifelse(!is.na(nbourhood_pct), 
+                                                  nbourhood_pct, 
+                                                  nbourhood_median),
+                                           bolton_value, 
+                                           england_value)
+                                 ,
+                                 q3 = c(nbourhood_q3, 
+                                        bolton_q3, 
+                                        england_q3)
+                                 ,
+                                 max = c(nbourhood_max, 
+                                         bolton_max, 
+                                         england_max)
+                                 
+                                 
+)
