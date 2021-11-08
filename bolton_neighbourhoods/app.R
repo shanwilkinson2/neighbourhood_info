@@ -11,9 +11,10 @@
     library(leaflet)
     library(leaflet.extras)
     library(plotly)
+    library(magrittr)
 
 # load static datasets
-    data_refresh_date <- "30/06/2021"
+    data_refresh_date <- "04/11/2021"
 
     neighbourhood_names <- c("Breightmet/Little Lever", "Central/Great Lever", "Chorley Roads", 
                              "Crompton/Halliwell", "Farnworth/Kearsley", "Horwich",
@@ -35,7 +36,7 @@
       ungroup() %>%
       select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name)) %>%
       relocate(nbourhood_min, .before = nbourhood_max) %>%
-      mutate(across(.cols = nbourhood_pct:bolton_value, 
+      mutate(across(.cols = nbourhood_pct:england_q3, 
                     .fns = ~round(.x, 1)
       ))
     
@@ -116,18 +117,26 @@ ui <-  dashboardPage(skin = "yellow",
             
             # chart
             tabItem(tabName = "chart_tab",
-                    h3("Visualising the difference between neighbourhoods & Bolton"),
+                    h3("Visualising the difference between neighbourhoods, Bolton & England"),
                     br(),
                     plotlyOutput("boxplot"),
+                    br(),
                     DT::DTOutput("boxplot_table"),
                     br(),
                     h3("How to interpret this chart"),
-                    p("This chart shows how the neighbourhood values compare to Bolton as a whole."),
-                    p("It shows the overall value (the notch), lowest value (left end of the bar) & highest value (right end of the bar) on the chosen indicator for the chosen neighbourhood & Bolton as a whole."),
-                    p("A neighbourhood notch much further left than the Bolton notch shows the neighbourhood is at the low end for Bolton on this indicator, while a neighbourhood notch much further right than the Bolton notch shows the neighbourhood is at the high end for Bolton."),
+                    p("This chart shows how the neighbourhood values compare to Bolton and England as a whole. It shows a mid point for each area, but also how they widely they vary."),
+                    p("Each area is built up of MSOAs (a medium sized administrative geography)."),
+                    p("The average (median) value for the MSOAs making up the larger area is the line inside the bar. For some (but not all) indicators, it is possible to calculate a value for the neighbourhood as a whole, this is given in the table below the chart; Bolton & England have a value for the area as a whole for all indicators, as they are standard areas."),
+                    p("The whiskers show the values for the lowest and highest MSOAs within the area."),
+                    p("The bar shows the range that the middle half of MSOAs in this area fall within."),
+                    p("The left edge of the bar shows Quartile 1/ the 25th percentile, this is the value that a quarter (25%) of values are lower than. The right edge of the bar shows Quartile 3/ the 75th perceentile, this is the value that three-quarters (75%) of values are lower than. The middle half therefore fall between these values."),
+                    p("The whiskers and bar may be symmetrical or not. If most areas are high on an indicator, but some are much lower (or vice versa), the chart may not look at all symmetrical."),
+                    h3("How to use this chart"),
+                    p("A neighbourhood bar & whiskers much further left than for Bolton shows the neighbourhood is at the low end for Bolton on this indicator, while a neighbourhood bar & whiskers much further right than the Bolton notch shows the neighbourhood is at the high end for Bolton."),
                     p("But look at the numbers at the bottom of the chart - it may be that the whole of Bolton is quite similar on an indicator & differences may not be big enough to be useful in the real world."),
-                    p("Is the neighbourhoood bar narrow? This indicates the whole neighbourhood is quite similar on this indicator."),
-                    p("A wide bar suggests a neighbourhood with a lot of variation on this indicator. Check out the map for this indicator to find out more about where the variation is.")
+                    p("Are the neighbourhoood bar and whiskers narrow? This indicates the whole neighbourhood is quite similar on this indicator."),
+                    p("A wide bar and whiskers suggest a neighbourhood with a lot of variation on this indicator. Check out the map for this indicator to find out more about where the variation is."),
+                    p("Compare Bolton & England in a similar way - Bolton may be much higher or lower than England, so an issue may still be important for a neighbourhood even if it is similar to the Bolton picture."),
                     ),
             
             # map
@@ -291,15 +300,35 @@ server <- function(input, output) {
       boxplot_data() %>%
       plot_ly() %>%
         add_trace(type = "box",
-                  y = list("Bolton", boxplot_data()$neighbourhood),
-                  q1 = list(boxplot_data()$bolton_min, boxplot_data()$nbourhood_min),
+                  y = list(
+                    "England",
+                    "Bolton", 
+                    boxplot_data()$neighbourhood
+                    ),
+                  q1 = list(boxplot_data()$england_q1,
+                            boxplot_data()$bolton_q1, 
+                            boxplot_data()$nbourhood_q1
+                            ),
+                  lowerfence = list(
+                    boxplot_data()$england_min,
+                    boxplot_data()$bolton_min, 
+                    boxplot_data()$nbourhood_min
+                    ),
                   # calculated value if it's available otherwise median
-                  median = list(boxplot_data()$bolton_value,
-                                ifelse(is.na(boxplot_data()$nbourhood_pct), 
-                                       boxplot_data()$nbourhood_median,
-                                       boxplot_data()$nbourhood_pct)
-                  ),
-                  q3 = list(boxplot_data()$bolton_max, boxplot_data()$nbourhood_max),
+                  median = list(
+                    boxplot_data()$england_median,
+                    boxplot_data()$bolton_median,
+                    boxplot_data()$nbourhood_median
+                    ),
+                  q3 = list(boxplot_data()$england_q3,
+                            boxplot_data()$bolton_q3, 
+                            boxplot_data()$nbourhood_q3
+                            ),
+                  upperfence = list(
+                    boxplot_data()$england_max,
+                    boxplot_data()$bolton_max, 
+                    boxplot_data()$nbourhood_max
+                    ),
                   notchspan = list(0.3, 0.3),
                   #hovertemplate = "some text {boxplot_data()$bolton_max}",
                   #hovertext = ~chart_data$nbourhood_count,
@@ -307,16 +336,41 @@ server <- function(input, output) {
         ) %>%
         layout(title = boxplot_data()$IndicatorName,
                xaxis = list(hoverformat = ".1f",
-                            title = "Area overall value & maximum & minimum"))
+                            title = "Area values"))
     })
     
     # create table
     output$boxplot_table <- DT::renderDT({
-      boxplot_data() %>%
-        select(`N'b'hood calculated value` = nbourhood_pct, `N'b'hood average` = nbourhood_median, 
-               `N'b'hood min`= nbourhood_min, `N'b'hood max` = nbourhood_max, 
-               `Bolton min` = bolton_min, `Bolton max` = bolton_max, `Bolton value` = bolton_value)
-    }, filter = "top", rownames = FALSE)
+      boxplot_data() %$%
+      data.frame(Area = c(neighbourhood, "Bolton", "England")
+                 ,
+                 Min = c(nbourhood_min, 
+                         bolton_min, 
+                         england_min)
+                 ,
+                 `Quartile1` = c(nbourhood_q1, 
+                        bolton_q1, 
+                        england_q1)
+                 ,
+                 Median = c(nbourhood_median, 
+                            bolton_median,
+                            england_median)
+                 ,
+                 Value = c(nbourhood_pct,
+                           bolton_value, 
+                           england_value)
+                 ,
+                 `Quartile3` = c(nbourhood_q3, 
+                        bolton_q3, 
+                        england_q3)
+                 ,
+                 Max = c(nbourhood_max, 
+                         bolton_max, 
+                         england_max)
+                 
+                 
+      )
+    }, rownames = FALSE)
     
     # create table
     output$msoa_neighbourhood_lookup <- DT::renderDT({
