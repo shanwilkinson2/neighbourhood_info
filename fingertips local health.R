@@ -131,18 +131,18 @@ library(fingertipsR)
       filter(TimeperiodSortable == max(TimeperiodSortable)) %>%
       ungroup()
 
-    
     # england MSOA max/min
     england_min_max <- local_health_all_msoa %>%
       filter(AreaType == "MSOA") %>%
       # keep latest value only - only seems to include latest anyway
       group_by(IndicatorID, Sex, Age) %>%
       filter(TimeperiodSortable == max(TimeperiodSortable)) %>%
-      mutate(england_min = min(Value, na.rm = TRUE),
-             england_max = max(Value, na.rm = TRUE),
-             england_q1 = quantile(Value, 0.25, na.rm = TRUE),
-             england_median = median(Value, na.rm = TRUE),
-             england_q3 = quantile(Value, 0.75, na.rm = TRUE)) %>%
+      mutate(
+        england_min = min(Value, na.rm = TRUE),
+        england_max = max(Value, na.rm = TRUE),
+        england_q1 = quantile(Value, 0.25, na.rm = TRUE),
+        england_median = median(Value, na.rm = TRUE),
+        england_q3 = quantile(Value, 0.75, na.rm = TRUE)) %>%
       slice(1)
     
     # combined for joining
@@ -183,7 +183,7 @@ library(fingertipsR)
   saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods/neighbourhood_indicators.RDS")
 
   
-# get rid of seperate & intermediate files
+# get rid of separate & intermediate files
    rm(bolton_local_health2, england_indicators, england_min_max, england_values, local_health, 
      local_health_msoa, local_health_borough,
      local_health_all_msoa, local_health_indicators, msoa_boundaries, msoa_neighbourhood_multiple,nbourhood_indicators,

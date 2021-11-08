@@ -223,3 +223,17 @@ neighbourhood_data2 %>%
   layout(title = neighbourhood_data2$IndicatorName,
          xaxis = list(hoverformat = ".1f",
                       title = "Area values"))
+
+### standardise 
+
+# msoa z score
+msoa_z <- local_health_all_msoa %>%
+  filter(AreaType == "MSOA") %>%
+  # keep latest value only - only seems to include latest anyway
+  group_by(IndicatorID, Sex, Age) %>%
+  filter(TimeperiodSortable == max(TimeperiodSortable)) %>%
+  mutate(
+    msoa_z = (Value - mean(Value, na.rm = TRUE))/ sd(Value, na.rm = TRUE)
+  ) %>%
+  filter(ParentName == "Bolton") %>%
+  ungroup()
