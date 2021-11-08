@@ -8,5 +8,4 @@ https://shanwilkinson2.shinyapps.io/bolton_neighbourhoods/
 
 # to fix
 * Turton - some indicators not displaying properly on chart
-* Life expectancy not displaying properly on chart as m/f - if not persons, add in gender into the indicator name
 * England - some indicators have no max/ min value - check if need to add na.rm = TRUE when calculating
