@@ -138,35 +138,9 @@ neighbourhood_data <- neighbourhood_indicators %>%
   ))
 
 neighbourhood_data2 <-neighbourhood_data %>%
-  filter(IndicatorName == "Percentage of the total resident population who are 65 and over" &
-           neighbourhood == "Central/Great Lever") 
-
-neighbourhood_data3 <-data.frame(area = c(neighbourhood_data2$neighbourhood, "Bolton", "England")
-                                 ,
-                                 min = c(neighbourhood_data2$nbourhood_min, 
-                                         neighbourhood_data2$bolton_min, 
-                                         neighbourhood_data2$england_min)
-                                 ,
-                                 q1 = c(neighbourhood_data2$nbourhood_q1, 
-                                         neighbourhood_data2$bolton_q1, 
-                                         neighbourhood_data2$england_q1)
-                                 ,
-                                 value = c(ifelse(!is.na(neighbourhood_data2$nbourhood_pct), 
-                                                  neighbourhood_data2$nbourhood_pct, 
-                                                  neighbourhood_data2$nbourhood_median),
-                                           neighbourhood_data2$bolton_value, 
-                                           neighbourhood_data2$england_value)
-                                 ,
-                                 q3 = c(neighbourhood_data2$nbourhood_q3, 
-                                         neighbourhood_data2$bolton_q3, 
-                                         neighbourhood_data2$england_q3)
-                                 ,
-                                 max = c(neighbourhood_data2$nbourhood_max, 
-                                         neighbourhood_data2$bolton_max, 
-                                         neighbourhood_data2$england_max)
-                                 
-
-)
+  filter(IndicatorName == "Child Poverty, Income deprivation affecting children index (IDACI)"  &
+           neighbourhood == "Turton"
+         ) 
 
 library(magrittr)
 neighbourhood_data3 <-neighbourhood_data2 %$%
@@ -193,6 +167,59 @@ neighbourhood_data3 <-neighbourhood_data2 %$%
                                  max = c(nbourhood_max, 
                                          bolton_max, 
                                          england_max)
-                                 
-                                 
-)
+             )
+
+# boxplot
+
+
+neighbourhood_data2 %>%
+  plot_ly() %>%
+  add_trace(type = "box",
+            y = list(
+              "England",
+              "Bolton", 
+              # neighbourhood_data2$neighbourhood
+              "Turton"
+            ),
+            q1 = list(
+              neighbourhood_data2$england_q1,
+              # neighbourhood_data2$bolton_q1, 
+              10.3,
+              11#5.3
+              # neighbourhood_data2$nbourhood_q1
+            ),
+            # lowerfence = list(
+            #   neighbourhood_data2$england_min,
+            #   neighbourhood_data2$bolton_min,
+            #   neighbourhood_data2$nbourhood_min
+            # ),
+            # calculated value if it's available otherwise median
+            median = list(
+              neighbourhood_data2$england_value,
+              # neighbourhood_data2$bolton_value,
+              21.9,
+              20 #10.4
+              # neighbourhood_data2$nbourhood_pct
+              # ifelse(is.na(neighbourhood_data2$nbourhood_pct),
+              #        neighbourhood_data2$nbourhood_median,
+              #        neighbourhood_data2$nbourhood_pct)
+            ),
+            q3 = list(neighbourhood_data2$england_q3,
+                      # neighbourhood_data2$bolton_q3,
+                      29,
+                      28 #9.6
+                      # neighbourhood_data2$nbourhood_q3
+            ),
+            # upperfence = list(
+            #   neighbourhood_data2$england_max,
+            #   neighbourhood_data2$bolton_max,
+            #   neighbourhood_data2$nbourhood_max
+            # ),
+            # notchspan = list(0.3, 0.3),
+            #hovertemplate = "some text {boxplot_data()$bolton_max}",
+            #hovertext = ~chart_data$nbourhood_count,
+            color = "orange"
+  ) %>%
+  layout(title = neighbourhood_data2$IndicatorName,
+         xaxis = list(hoverformat = ".1f",
+                      title = "Area values"))

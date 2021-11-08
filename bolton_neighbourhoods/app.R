@@ -125,7 +125,8 @@ ui <-  dashboardPage(skin = "yellow",
                     br(),
                     h3("How to interpret this chart"),
                     p("This chart shows how the neighbourhood values compare to Bolton and England as a whole."),
-                    p("The overall value is the line inside the bar."),
+                    p("The average (median) value for the small areas that make up the larger area is the line inside the bar."),
+                    p("For some (but not all) indicators, it is possible to calculate a value for the area as a whole, this is given in the table below the chart."),
                     p("The whiskers show the values for the lowest and highest MSOAs within the area."),
                     p("The bar shows the range that the middle half of MSOAs (the areas that this data is built up from) within this area fall within."),
                     p("The left edge of the bar shows Quartile 1/ the 25th percentile, this is the value that a quarter (25%) of values are lower than. The right edge of the bar shows Quartile 3/ the 75th perceentile, this is the value that three-quarters (75%) of values are lower than. The middle half therefore fall between these values."),
@@ -314,12 +315,10 @@ server <- function(input, output) {
                     ),
                   # calculated value if it's available otherwise median
                   median = list(
-                    boxplot_data()$england_value,
-                    boxplot_data()$bolton_value,
-                    ifelse(is.na(boxplot_data()$nbourhood_pct), 
-                           boxplot_data()$nbourhood_median,
-                           boxplot_data()$nbourhood_pct)
-                  ),
+                    boxplot_data()$england_median,
+                    boxplot_data()$bolton_median,
+                    boxplot_data()$nbourhood_median
+                    ),
                   q3 = list(boxplot_data()$england_q3,
                             boxplot_data()$bolton_q3, 
                             boxplot_data()$nbourhood_q3
@@ -352,9 +351,11 @@ server <- function(input, output) {
                         bolton_q1, 
                         england_q1)
                  ,
-                 Value = c(ifelse(!is.na(nbourhood_pct), 
-                                  nbourhood_pct, 
-                                  nbourhood_median),
+                 Median = c(nbourhood_median, 
+                            bolton_median,
+                            england_median)
+                 ,
+                 Value = c(nbourhood_pct,
                            bolton_value, 
                            england_value)
                  ,
