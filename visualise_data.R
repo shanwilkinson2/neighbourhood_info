@@ -237,3 +237,15 @@ msoa_z <- local_health_all_msoa %>%
   ) %>%
   filter(ParentName == "Bolton") %>%
   ungroup()
+
+### standardised values
+
+
+nbourhood_indicators2b %>%
+  filter(neighbourhood == "Crompton/Halliwell") %>%
+  group_by(IndicatorID, Sex, Age) %>%
+  slice(1) %>%
+  select(IndicatorID:IndicatorName, nbourhood_pct:england_q3) %>%
+  View()
+
+  select()
