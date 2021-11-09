@@ -164,6 +164,9 @@ ui <-  dashboardPage(skin = "yellow",
                     h3("How to interpret this table"),
                     p("This table shows how the selected neighbourhood compares with MSOAs all across England."),
                     p("Indicators are standardised using 'z scores' so it puts each indicator all on the same scale, to help see where the neighbourhood is most different."),
+                    p("By default, indicators are sorted by standardised average score, so the most different from England are at the top. They might be different because they are much higher or much lower."),
+                    p("Range per neighbourhood is also given, you can sort by these columns to identify indicators where there is a great deal of or very little variation within the neighbourhood."),
+                    p("You can use this table together with the map and chart to see which indicators to focus on and find out more about from elsewhere.")
             ),
             
             # about neighbourhoods
