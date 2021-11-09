@@ -120,7 +120,8 @@ library(fingertipsR)
            z_nbourhood_q1 = quantile(msoa_z, 0.25, na.rm = TRUE),
            z_nbourhood_q3 = quantile(msoa_z, 0.75, na.rm = TRUE),
            z_nbourhoood_median_abs = abs(z_nbourhood_median),
-           z_nbourhood_iqr_abs = abs(z_nbourhood_q3 - z_nbourhood_q1)
+           z_nbourhood_iqr_abs = abs(z_nbourhood_q3 - z_nbourhood_q1),
+           z_nbourhood_range_abs = abs(z_nbourhood_max - z_nbourhood_min)
            ) %>%
     ungroup() %>%
     # get direction of absolute values

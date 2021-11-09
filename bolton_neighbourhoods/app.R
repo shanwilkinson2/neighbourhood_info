@@ -61,6 +61,8 @@ ui <-  dashboardPage(skin = "yellow",
                     menuItem("Table", tabName = "table_tab", icon = icon("table")),
                     menuItem("Chart", tabName = "chart_tab", icon = icon("chart-line")),
                     menuItem("Map", tabName = "map", icon = icon("globe")),
+                    menuItem("Differences", tabName = "z_scores", icon = icon("arrows-alt-h")),
+                    menuItem("About neighbourhoods", tabName = "about_neighbourhoods", icon = icon("map-signs")),
                     menuItem("About the data", tabName = "about", icon = icon("info"))
          ),
         # neighbourhood selector
@@ -155,6 +157,27 @@ ui <-  dashboardPage(skin = "yellow",
                     p("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world.")
             ),
             
+            # difference from England
+            tabItem(tabName = "z_scores",
+                    h3("How different is the selected neighbourhood from England?"),
+                    DT::DTOutput("neighbourhood_z"),
+                    h3("How to interpret this table"),
+                    p("This table shows how the selected neighbourhood compares with MSOAs all across England."),
+                    p("Indicators are standardised using 'z scores' so it puts each indicator all on the same scale, to help see where the neighbourhood is most different."),
+            ),
+            
+            # about neighbourhoods
+            tabItem(tabName = "about_neighbourhoods",
+                    h2("Bolton's neighbourhoods"),
+                    leafletOutput("neighbourhoods_map"),
+                    h3("What are neighbourhoods?"),
+                    p("Neighbourhoods are a local geography, created for integrated health and social care."),
+                    p("The map above shows Bolton's neighbourhoods."),
+                    p("Bolton's neighbourhoods are made up of Lower Super Output Areas (LSOAs), but the data in this tool is only available at MSOA, which is bigger so the boundaries don't quite match."),
+                    h3("MSOA neighbourhood lookup"),
+                    DT::DTOutput("msoa_neighbourhood_lookup")
+            ),
+            
             # data sources
             tabItem(tabName = "about",
                     h2("Data source"),
@@ -173,10 +196,7 @@ ui <-  dashboardPage(skin = "yellow",
                     h2("Code"),
                     p("The code for this app is on my github."),
                     a("Github", href = "https://github.com/shanwilkinson2/neighbourhood_info", 
-                      target = "_blank"),
-                    br(),
-                    h2("MSOA neighbourhood lookup"),
-                    DT::DTOutput("msoa_neighbourhood_lookup")
+                      target = "_blank")
             )
         )
     )
@@ -373,6 +393,25 @@ server <- function(input, output) {
     }, rownames = FALSE)
     
     # create table
+    output$neighbourhood_z <- DT::renderDT({
+      neighbourhood_data %>%
+        filter(neighbourhood == input$select_neighbourhood) %>%
+        select(Indicator = IndicatorName, Domain = DomainName,  
+               `N'b'hood standardised average` = z_nbourhoood_median_abs, `N'b'hood direction` = z_nbourhood_median_abs_direction,
+               `N'b'hood average` = nbourhood_median, `England average` = england_median,
+               `N'b'hood standardised mid half range` = z_nbourhood_iqr_abs, `N'b'hood standardised range` =  z_nbourhood_range_abs
+        ) %>%
+        arrange(desc(`N'b'hood standardised average`))
+    }, 
+    filter = "top", 
+    rownames = FALSE,
+    extensions = "Buttons", 
+    options = list(dom = "Bprti", # order of buttons/ filter etc
+                   buttons = c("copy", "csv", "excel"))
+    
+    )
+    
+    # create table
     output$msoa_neighbourhood_lookup <- DT::renderDT({
       msoa_neighbourhood_multiple %>%
         rename(`MSOA code` = msoa_code, 
@@ -388,6 +427,16 @@ server <- function(input, output) {
                    buttons = c("copy", "csv", "excel"))
     
     )
+    
+    # create map of all neighbourhoods
+    output$neighbourhoods_map <- renderLeaflet({
+      leaflet(neighbourhood_boundaries) %>%
+        addResetMapButton() %>%
+        addProviderTiles("Stamen.TonerLite") %>%
+        addPolygons(weight = 4, color = "red", fillOpacity = 0,
+                    label = ~paste(neighbourhood_name, "neighbourhood")) 
+    })
+    
     
 }
 

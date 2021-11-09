@@ -249,3 +249,31 @@ nbourhood_indicators2b %>%
   View()
 
   select()
+  
+  neighbourhood_data <- neighbourhood_indicators %>%
+    st_drop_geometry() %>%
+    group_by(IndicatorID, Sex, Age, neighbourhood) %>%
+    slice(1) %>% # first row only per neighbourhood, so will give neighbourood values as same for every msoa in the neighbourhood
+    ungroup() %>%
+    select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name)) %>%
+    relocate(nbourhood_min, .before = nbourhood_max) %>%
+    mutate(across(.cols = nbourhood_pct:england_q3, 
+                  .fns = ~round(.x, 1)
+    ))
+  
+  neighbourhood_data2 <-neighbourhood_data %>%
+    filter(neighbourhood == "Crompton/Halliwell") %>%
+    select(IndicatorName, DomainName,  
+           z_nbourhoood_median_abs, z_nbourhood_median_abs_direction,
+           nbourhood_median, england_median,
+           z_nbourhood_iqr_abs, z_nbourhood_range_abs
+    ) %>%
+    arrange(desc(z_nbourhoood_median_abs))
+  
+  # map of all neighbourhoods
+  
+  leaflet(neighbourhood_boundaries) %>%
+    addResetMapButton() %>%
+    addProviderTiles("Stamen.TonerLite") %>%
+    addPolygons(weight = 4, color = "red", fillOpacity = 0,
+                label = ~paste(neighbourhood_name, "neighbourhood")) 
