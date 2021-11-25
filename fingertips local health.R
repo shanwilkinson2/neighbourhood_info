@@ -127,8 +127,8 @@ library(fingertipsR)
     # get direction of absolute values
     mutate(
       z_nbourhood_median_abs_direction = case_when(
-        z_nbourhood_median >0 ~ "high",
-        z_nbourhood_median <0 ~ "low",
+        z_nbourhood_median >0 ~ "higher",
+        z_nbourhood_median <0 ~ "lower",
         z_nbourhood_median ==0 ~ "average")
       ) %>%
     # bolton min & max
