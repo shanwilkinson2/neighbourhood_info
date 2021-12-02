@@ -281,10 +281,22 @@ nbourhood_indicators2b %>%
   #### conditional formatting
   
   library(DT)
+
+  ##
   options(DT.options = list(pageLength = 5))
   df = as.data.frame(cbind(matrix(round(rnorm(50), 3), 10), sample(0:1, 10, TRUE)))
   # style V6 based on values of V6
-  datatable(df) %>% DT::formatStyle(
+  datatable(df) %>% formatStyle(
     'V3',
-    DT::backgroundColor = styleInterval(c(0,1), c("white", 'yellow', "orange"))
+    backgroundColor = styleInterval(c(0, 1), c('white', 'yellow', "orange"))
   )
+  
+    ##
+  options(DT.options = list(pageLength = 5))
+  df = as.data.frame(cbind(matrix(round(rnorm(50), 3), 10), sample(0:1, 10, TRUE)))
+  # style V6 based on values of V6
+  datatable(df) %>% formatStyle(
+    'V3',
+    backgroundColor = styleInterval(c(0, 1), c('white', 'yellow', "orange"))
+  )
+  

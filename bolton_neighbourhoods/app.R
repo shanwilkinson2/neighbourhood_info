@@ -47,7 +47,7 @@
     
 #######################################################################
     
-ui <-  dashboardPage(skin = "yellow",
+ui <-  dashboardPage(skin = "yellow",  
 
     # Application title
     dashboardHeader(title = "Bolton Neighbourhood Information",
@@ -203,7 +203,7 @@ ui <-  dashboardPage(skin = "yellow",
                       target = "_blank")
             )
         )
-    )
+    ), tags$head(tags$style(HTML('* {font-family: "Arial"}; sans-serif !important')))
 )
 
 
@@ -404,7 +404,7 @@ server <- function(input, output) {
                `N'b'hood average` = nbourhood_median, `England average` = england_median,
                `N'b'hood standardised mid half range` = z_nbourhood_iqr_abs, `N'b'hood standardised range` =  z_nbourhood_range_abs
         ) %>%
-        arrange(desc(`N'b'hood standardised average`)) 
+        arrange(desc(`N'b'hood standardised average`))
     }, 
     filter = "top", 
     rownames = FALSE,
