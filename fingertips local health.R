@@ -58,7 +58,7 @@ library(data.table)
     
     # add names ###################################################################################################
     
-    GOT HERE
+    ## GOT HERE
     
   # get borough local health data+
     # gets Bolton & England from API direct as csv
