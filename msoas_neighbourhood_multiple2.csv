@@ -1,0 +1,53 @@
+msoa_name,msoa_code,hoc_msoa_name,x6_areas_number,neighbourhood,num_lsoas
+Bolton 001,E02000984,Dunscar & Egerton,3,3 - Turton/ Belmont,5
+Bolton 002,E02000985,Bromley Cross & Bradshaw,3,3 - Turton/ Belmont,5
+Bolton 003,E02000986,Eagley & Sharples,3,3 - Turton/ Belmont,5
+Bolton 004,E02000987,Horwich North,2,2 - Westhoughton/ Horwich,5
+Bolton 005,E02000988,Astley Bridge & Waters Meeting,3,3 - Turton/ Belmont,4
+Bolton 005,E02000988,Astley Bridge & Waters Meeting,4,4 - Breightmet/ Little Lever,1
+Bolton 006,E02000989,Harwood,3,3 - Turton/ Belmont,5
+Bolton 006,E02000989,Harwood,4,4 - Breightmet/ Little Lever,1
+Bolton 007,E02000990,Horwich South & Middlebrook,2,2 - Westhoughton/ Horwich,4
+Bolton 007,E02000990,Horwich South & Middlebrook,3,3 - Turton/ Belmont,1
+Bolton 008,E02000991,Smithills,3,3 - Turton/ Belmont,1
+Bolton 008,E02000991,Smithills,6,6 - Town centre N,4
+Bolton 009,E02000992,Blackrod & Butterwick Fields,2,2 - Westhoughton/ Horwich,4
+Bolton 010,E02000993,Hall I' th' Wood,3,3 - Turton/ Belmont,2
+Bolton 010,E02000993,Hall I' th' Wood,4,4 - Breightmet/ Little Lever,2
+Bolton 011,E02000994,Halliwell & Brownlow Fold,6,6 - Town centre N,5
+Bolton 012,E02000995,Doffcocker & Moss Bank,3,3 - Turton/ Belmont,2
+Bolton 012,E02000995,Doffcocker & Moss Bank,6,6 - Town centre N,3
+Bolton 013,E02000996,Breightmet North,4,4 - Breightmet/ Little Lever,5
+Bolton 014,E02000997,Horwich East,2,2 - Westhoughton/ Horwich,3
+Bolton 014,E02000997,Horwich East,3,3 - Turton/ Belmont,1
+Bolton 015,E02000998,Gilnow & Victory,6,6 - Town centre N,5
+Bolton 016,E02000999,Central Bolton,5,5 - Town centre S,1
+Bolton 016,E02000999,Central Bolton,6,6 - Town centre N,4
+Bolton 017,E02001000,Tonge,4,4 - Breightmet/ Little Lever,5
+Bolton 017,E02001000,Tonge,5,5 - Town centre S,1
+Bolton 018,E02001001,Heaton & Deane,5,5 - Town centre S,2
+Bolton 018,E02001001,Heaton & Deane,6,6 - Town centre N,3
+Bolton 019,E02001002,Breightmet South & Darcy Lever,4,4 - Breightmet/ Little Lever,6
+Bolton 020,E02001003,Lostock & Ladybridge,2,2 - Westhoughton/ Horwich,1
+Bolton 020,E02001003,Lostock & Ladybridge,3,3 - Turton/ Belmont,1
+Bolton 020,E02001003,Lostock & Ladybridge,5,5 - Town centre S,2
+Bolton 020,E02001003,Lostock & Ladybridge,6,6 - Town centre N,1
+Bolton 021,E02001004,Rumworth North,5,5 - Town centre S,5
+Bolton 022,E02001005,Burnden & Great Lever,1,1- Farnworth/ Kearsley,1
+Bolton 022,E02001005,Burnden & Great Lever,5,5 - Town centre S,4
+Bolton 023,E02001006,Rumworth South,5,5 - Town centre S,5
+Bolton 024,E02001007,Little Lever,4,4 - Breightmet/ Little Lever,7
+Bolton 025,E02001008,Lever Edge,1,1- Farnworth/ Kearsley,2
+Bolton 025,E02001008,Lever Edge,5,5 - Town centre S,3
+Bolton 026,E02001009,Daubhill & Fernhill Gate,1,1- Farnworth/ Kearsley,1
+Bolton 026,E02001009,Daubhill & Fernhill Gate,5,5 - Town centre S,3
+Bolton 027,E02001010,Farnworth North,1,1- Farnworth/ Kearsley,4
+Bolton 028,E02001011,Westhoughton East,2,2 - Westhoughton/ Horwich,6
+Bolton 029,E02001012,Harper Green,1,1- Farnworth/ Kearsley,5
+Bolton 030,E02001013,Over Hulton,2,2 - Westhoughton/ Horwich,3
+Bolton 030,E02001013,Over Hulton,5,5 - Town centre S,1
+Bolton 031,E02001014,Westhoughton West,2,2 - Westhoughton/ Horwich,5
+Bolton 032,E02001015,Farnworth South,1,1- Farnworth/ Kearsley,5
+Bolton 033,E02001016,Highfield & New Bury,1,1- Farnworth/ Kearsley,5
+Bolton 034,E02001017,Kearsley & Stoneclough,1,1- Farnworth/ Kearsley,7
+Bolton 035,E02001018,Westhoughton Daisy Hill,2,2 - Westhoughton/ Horwich,5
