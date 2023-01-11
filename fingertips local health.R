@@ -1,17 +1,9 @@
-# # fingertipsR is no longer on CRAN
-# install.packages("fingertipsR", repos = "https://dev.ropensci.org")
-# # also need "shinycssloaders" 
-# install.packages("shinycssloaders")
-# install.packages("miniUI")
 
 #################### load packages ################################
 
 library(dplyr)
 library(data.table)
 # library(shinycssloaders)
-#library(fingertipsR)
-#library(data.table)
-#library(nomisr)
 #library(readxl)
 
 ################# get data from phe fingertips local health #########################  
@@ -21,29 +13,8 @@ library(data.table)
 # local health 
 # https://fingertips.phe.org.uk/profile/local-health/data#page/0/gid/1938133180/ati/3/iid/93744/age/28/sex/4/cid/4/tbm/1
 
-# # available indicators in local health profile
-#   local_health_indicators <- indicators(ProfileID = 143)
+# gets indicator details direct from API as fingertipsR is no longer on cran
 
-# get Bolton msoa data for all local health indicators 
-  # # msoa codes
-  #   bolton_area_codes <- c( #"E08000001", # bolton itself
-  #     "E02000984", "E02000985", "E02000986", "E02000987",
-  #     "E02000988", "E02000989", "E02000990", "E02000991", "E02000992",
-  #     "E02000993", "E02000994", "E02000995", "E02000996", "E02000997",
-  #     "E02000998", "E02000999", "E02001000", "E02001001", "E02001002",
-  #     "E02001003", "E02001004", "E02001005", "E02001006", "E02001007",
-  #     "E02001008", "E02001009", "E02001010", "E02001011", "E02001012",
-  #     "E02001013", "E02001014", "E02001015", "E02001016", "E02001017",
-  #     "E02001018")
-
-  # # get msoa local health data
-  #   local_health_msoa <- fingertips_data(IndicatorID = local_health_indicators$IndicatorID,
-  #                                       ProfileID = 143,
-  #                                       AreaTypeID = 3, # 3 = MSOA
-  #                                       AreaCode = bolton_area_codes
-  #    )
-    
-###### gets indicator details direct from API
 # group names & numbers
     local_health_metadata <- httr::GET("https://fingertips.phe.org.uk/api/profile?profile_id=143")$content %>%
       rawToChar() %>%
@@ -56,50 +27,49 @@ library(data.table)
       rawToChar() %>%
       jsonlite::fromJSON(flatten = TRUE)
     
-    # add names ###################################################################################################
+    local_health_indicators <- local_health_group_metadata %>%
+      left_join(local_health_metadata, by = c("GroupId" = "Id")) %>%
+      rename(DomainName = Name) %>%
+      relocate(DomainName, .after = "GroupId")
     
-    ## GOT HERE
-    
+    # remove unjoined file
+    rm(local_health_metadata)
+    rm(local_health_group_metadata)
+
   # get borough local health data+
-    # gets Bolton & England from API direct as csv
-    # # https://fingertips.phe.org.uk/api/all_data/csv/by_profile_id?child_area_type_id=402&parent_area_type_id=3&profile_id=143&parent_area_code=E08000001
-    # local_health_borough <- fingertips_data(IndicatorID = local_health_indicators$IndicatorID,
-    #                                    ProfileID = 143,
-    #                                    AreaTypeID = 402, # 402 = UTLA with boundary changes post Apr 2021
-    #                                    AreaCode = "E08000001" # bolton
-    #                                     ) 
-    # ProfileID = 143
+    # gets Bolton & England from API direct as csv. only available as csv download
+    # ProfileID = 143,
     # AreaTypeID = 402, # 402 = UTLA with boundary changes post Apr 2021
+    # Area
     # AreaCode = "E08000001" # bolton
-    
+
     local_health_borough <- fread("https://fingertips.phe.org.uk/api/all_data/csv/by_profile_id?child_area_type_id=402&parent_area_type_id=3&profile_id=143&parent_area_code=E08000001") %>%
       janitor::clean_names()
-    
+
+    # # prone to breaking...
+    # saveRDS(local_health_borough, "local_health_borough.RDS")
+    # local_healht_borough <- readRDS("local_health_borough.RDS")
+
     # get all msoas local health data - takes a bit of a while
-    # direct from API
-    # https://fingertips.phe.org.uk/api/all_data/csv/by_profile_id?child_area_type_id=402&parent_area_type_id=15&profile_id=143&parent_area_code=E08000001
-    # local_health_all_msoa <- fingertips_data(IndicatorID = local_health_indicators$IndicatorID,
-    #                                      ProfileID = 143,
-    #                                      AreaTypeID = 3#, # 3 = MSOA
-    #                                      # AreaCode = bolton_area_codes
-    #                                       ) 
-    
     local_health_all_msoa <- fread("https://fingertips.phe.org.uk/api/all_data/csv/by_profile_id?child_area_type_id=3&parent_area_type_id=15&profile_id=143") %>%
       janitor::clean_names()
     
+    # # prone to breaking...
+    # saveRDS(local_health_all_msoa, "local_health_all_msoa.RDS")
+    # local_healht_all_msoa <- readRDS("local_health_all_msoa.RDS")
+
     # filter just bolton
-    local_health_msoa <- local_health_all_msoa %>%
-      #filter(AreaCode %in% bolton_area_codes)
+    local_health_bolton_msoa <- local_health_all_msoa %>%
       filter(stringr::str_detect(area_name, "^Bolton") & area_type == "MSOA")
 
   # join msoa & borough data
-    local_health <- bind_rows(local_health_msoa, local_health_borough)
+    local_health <- bind_rows(local_health_bolton_msoa, local_health_borough)
 
 # # MSOA best fit (local health doesn't go down to lsoa)
 #   msoa_neighbourhood <- readRDS("msoas_neighbourhood.RDS")
 # includes value for Bolton to keep whole borough value
   # version where MSOAs appear in more than 1 neighbourhood
-  msoa_neighbourhood_multiple <- data.table::fread("msoas_neighbourhood_multiple.csv")
+  msoa_neighbourhood_multiple <- data.table::fread("msoas_neighbourhood_multiple2.csv")
 
     # add in neighbourhood using multiple file
     bolton_local_health2 <- full_join(local_health, msoa_neighbourhood_multiple, 
