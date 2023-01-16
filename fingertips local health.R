@@ -36,7 +36,7 @@ library(data.table)
     rm(local_health_metadata)
     rm(local_health_group_metadata)
 
-  # get borough local health data+
+  # get borough local health data
     # gets Bolton & England from API direct as csv. only available as csv download
     # ProfileID = 143,
     # AreaTypeID = 402, # 402 = UTLA with boundary changes post Apr 2021
@@ -44,15 +44,15 @@ library(data.table)
     # AreaCode = "E08000001" # bolton
 
     local_health_borough <- fread("https://fingertips.phe.org.uk/api/all_data/csv/by_profile_id?child_area_type_id=402&parent_area_type_id=3&profile_id=143&parent_area_code=E08000001") %>%
-      janitor::clean_names()
+      janitor::clean_names(case = "upper_camel") # upper camel case used in API json output & fingertipsR
 
     # # prone to breaking...
     # saveRDS(local_health_borough, "local_health_borough.RDS")
-    # local_healht_borough <- readRDS("local_health_borough.RDS")
+    # local_health_borough <- readRDS("local_health_borough.RDS")
 
     # get all msoas local health data - takes a bit of a while
     local_health_all_msoa <- fread("https://fingertips.phe.org.uk/api/all_data/csv/by_profile_id?child_area_type_id=3&parent_area_type_id=15&profile_id=143") %>%
-      janitor::clean_names()
+      janitor::clean_names(case = "upper_camel") # upper camel case used in API json output & fingertipsR
     
     # # prone to breaking...
     # saveRDS(local_health_all_msoa, "local_health_all_msoa.RDS")
@@ -60,7 +60,7 @@ library(data.table)
 
     # filter just bolton
     local_health_bolton_msoa <- local_health_all_msoa %>%
-      filter(stringr::str_detect(area_name, "^Bolton") & area_type == "MSOA")
+      filter(stringr::str_detect(AreaName, "^Bolton") & AreaType == "MSOA")
 
   # join msoa & borough data
     local_health <- bind_rows(local_health_bolton_msoa, local_health_borough)
@@ -73,25 +73,23 @@ library(data.table)
 
     # add in neighbourhood using multiple file
     bolton_local_health2 <- full_join(local_health, msoa_neighbourhood_multiple, 
-                                      by = c("area_name"= "msoa_name")) %>%
+                                      by = c("AreaName"= "msoa_name")) %>%
       # keep latest value only - only seems to include latest anyway
-      group_by(indicator_id, sex, age, area_name) %>%
-      filter(time_period_sortable == max(time_period_sortable)) %>%
+      group_by(IndicatorId, Sex, Age, AreaName) %>%
+      filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
       ungroup() %>%
       # add in domain ie part of the profile 
-      left_join(local_health_indicators %>% 
-                  select(IndicatorID, DomainID, DomainName, ProfileID, ProfileName),
-                by = "IndicatorID") %>%
-      filter(ProfileID == 143) %>% # local health profile = 143, some indicators are in multiple
-      arrange(ProfileID, DomainID) %>%
-      group_by(IndicatorID, Sex, Age, neighbourhood)  
+      left_join(local_health_indicators %>% select(-IndicatorName),
+                by = "IndicatorId") %>%
+      arrange(GroupId) %>%
+      group_by(IndicatorId, Sex, Age, neighbourhood)  
         
 ####### transform to neighbourhood level ##############################################################
 
 # combine indicators but keep msoa level so can have 1 dataset
   
   nbourhood_indicators <- bolton_local_health2 %>%
-    group_by(IndicatorID, Sex, Age, TimeperiodSortable, neighbourhood) %>%
+    group_by(IndicatorId, Sex, Age, TimePeriodSortable, neighbourhood) %>%
     mutate(nbourhood_count = sum(Count), 
            nbourhood_denominator = sum(Denominator),
            nbourhood_pct = nbourhood_count/ nbourhood_denominator*100,
@@ -103,12 +101,15 @@ library(data.table)
            ) %>%
     ungroup() %>%
     # bolton min & max
-    group_by(IndicatorID, Sex, Age, TimeperiodSortable) %>%
+    group_by(IndicatorId, Sex, Age, TimePeriodSortable) %>%
     mutate(bolton_min = min(Value, na.rm = TRUE),
            bolton_max = max(Value, na.rm = TRUE),
            bolton_q1 = quantile(Value, 0.25, na.rm = TRUE),
            bolton_median = median(Value, na.rm = TRUE),
-           bolton_q3 = quantile(Value, 0.75, na.rm = TRUE))
+           bolton_q3 = quantile(Value, 0.75, na.rm = TRUE),
+           neighbourhood = ifelse(is.na(neighbourhood) & AreaName == "Bolton",
+            "Bolton", neighbourhood))
+    
   
   # pivot to get bolton value in a different column
   nbourhood_indicators2 <- left_join(
@@ -118,8 +119,8 @@ library(data.table)
     nbourhood_indicators %>%
       ungroup() %>%
       filter(neighbourhood == "Bolton") %>%
-      select(IndicatorID, Sex, Age, TimeperiodSortable, bolton_value = nbourhood_median), # median will be the value as all bolton
-    by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable"),
+      select(IndicatorId, Sex, Age, TimePeriodSortable, bolton_value = nbourhood_median), # median will be the value as all bolton
+    by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable"),
     suffix = c("_neighbourhood", "_bolton")
   )
   
@@ -129,9 +130,12 @@ library(data.table)
     england_indicators <- local_health_all_msoa %>%
       filter(AreaType == "England") %>%
       # keep latest value only - only seems to include latest anyway
-      group_by(IndicatorID, Sex, Age) %>%
-      filter(TimeperiodSortable == max(TimeperiodSortable)) %>%
+      group_by(IndicatorId, Sex, Age) %>%
+      filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
+      slice(1) %>% # each seems to be duplicated, keep 1st only
       ungroup()
+    
+    ######### REACHED HERE!! ############################################
 
     # england MSOA max/min
     england_min_max <- local_health_all_msoa %>%
