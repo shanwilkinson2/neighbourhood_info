@@ -134,15 +134,13 @@ library(data.table)
       filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
       slice(1) %>% # each seems to be duplicated, keep 1st only
       ungroup()
-    
-    ######### REACHED HERE!! ############################################
 
     # england MSOA max/min
     england_min_max <- local_health_all_msoa %>%
       filter(AreaType == "MSOA") %>%
       # keep latest value only - only seems to include latest anyway
-      group_by(IndicatorID, Sex, Age) %>%
-      filter(TimeperiodSortable == max(TimeperiodSortable)) %>%
+      group_by(IndicatorId, Sex, Age) %>%
+      filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
       mutate(
         england_min = min(Value, na.rm = TRUE),
         england_max = max(Value, na.rm = TRUE),
@@ -154,19 +152,19 @@ library(data.table)
     # combined for joining
     england_values <- full_join(
       england_indicators %>%
-        select(IndicatorID, Sex, Age, TimeperiodSortable, Value)
+        select(IndicatorId, Sex, Age, TimePeriodSortable, Value)
       ,
       england_min_max %>%
-        select(IndicatorID, Sex, Age, TimeperiodSortable, england_min: england_q3)
+        select(IndicatorId, Sex, Age, TimePeriodSortable, england_min: england_q3)
       ,
-      by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable")
+      by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable")
     )
   
     # join in england
     nbourhood_indicators2b <- left_join(nbourhood_indicators2, 
                                         england_values %>%
                                           rename("england_value"= "Value"),
-                                        by = c("IndicatorID", "Sex", "Age", "TimeperiodSortable"), 
+                                        by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable"), 
                                         suffix = c("", "_england")) %>%
       # give new indicator name for sex disaggregated indicators
       mutate(IndicatorName = ifelse(!Sex %in% c("Persons", "Not applicable"), 
@@ -185,15 +183,15 @@ library(data.table)
                  )
 
   
-# save for app
-  saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods/neighbourhood_indicators.RDS")
+# save for app <----------------------- now number 2 ######################################################
+  saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods/neighbourhood_indicators2.RDS")
 
   
 # get rid of separate & intermediate files
    rm(bolton_local_health2, england_indicators, england_min_max, england_values, local_health, 
-     local_health_msoa, local_health_borough,
+     local_health_bolton_msoa, local_health_borough,
      local_health_all_msoa, local_health_indicators, msoa_boundaries, msoa_neighbourhood_multiple,nbourhood_indicators,
-     nbourhood_indicators2, nbourhood_indicators2b, nbourhood_indicators3, bolton_area_codes
+     nbourhood_indicators2, nbourhood_indicators2b, nbourhood_indicators3,
      )
   
 ###################### nomis ##########################
