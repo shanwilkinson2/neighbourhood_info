@@ -8,6 +8,8 @@ library(data.table)
 
 ################# get data from phe fingertips local health #########################  
 
+app_location <- "./bolton_neighbourhoods_app/"
+
   # downloads data, adds boundaries, saves nbourhood_indicators3 as neighbourhood_indicators for app
   
 # local health 
@@ -70,6 +72,10 @@ library(data.table)
 # includes value for Bolton to keep whole borough value
   # version where MSOAs appear in more than 1 neighbourhood
   msoa_neighbourhood_multiple <- data.table::fread("msoas_neighbourhood_multiple2.csv")
+  saveRDS(msoa_neighbourhood_multiple, paste0(app_location, "msoa_neighbourhood_multiple.RDS"))
+  
+  # save to app folder
+  
 
     # add in neighbourhood using multiple file
     bolton_local_health2 <- full_join(local_health, msoa_neighbourhood_multiple, 
@@ -183,7 +189,7 @@ library(data.table)
                  )
 
   
-# save for app <----------------------- now number 2 ######################################################
+# save for app 
   saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods_app/neighbourhood_indicators.RDS")
 
   

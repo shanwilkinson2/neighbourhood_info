@@ -3,6 +3,8 @@
 library(dplyr)
 library(sf)
 
+app_location <- "./bolton_neighbourhoods_app/"
+
 # LSOA boundaries & turning them into neighbourhood boundaries
 # LSOA boundaries 2011. 2021 are latest but no changes for Bolton
 # https://geoportal.statistics.gov.uk/datasets/lower-layer-super-output-areas-december-2011-generalised-clipped-boundaries-in-england-and-wales  
@@ -40,7 +42,7 @@ library(sf)
 
 # save as outer neighbourhood boundaries
   saveRDS(neighbourhood_boundaries, "neighbourhood boundaries6.RDS")
-
+  saveRDS(neighbourhood_boundaries, paste0(app_location, "neighbourhood boundaries.RDS"))
 
 # MSOA boundaries
 # https://geoportal.statistics.gov.uk/datasets/middle-layer-super-output-areas-december-2011-boundaries-bgc
