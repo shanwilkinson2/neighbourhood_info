@@ -184,7 +184,7 @@ library(data.table)
 
   
 # save for app <----------------------- now number 2 ######################################################
-  saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods/neighbourhood_indicators2.RDS")
+  saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods_app/neighbourhood_indicators.RDS")
 
   
 # get rid of separate & intermediate files
@@ -194,6 +194,3 @@ library(data.table)
      nbourhood_indicators2, nbourhood_indicators2b, nbourhood_indicators3,
      )
   
-###################### nomis ##########################
-
-# https://www.nomisweb.co.uk/api/v01/dataset/NM_2010_1.data.csv?geography=1249907237,1249907272,1249907273,1249907276,1249907277,1249907257,1249907259,1249907274,1249907275,1249907279,1249907238
