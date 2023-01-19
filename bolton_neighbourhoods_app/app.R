@@ -1,7 +1,4 @@
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
+# setwd("./bolton_neighbourhoods_app")
 
 # load packages
     library(shiny)
