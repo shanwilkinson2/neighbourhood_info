@@ -416,8 +416,10 @@ server <- function(input, output) {
       rename(`MSOA code` = msoa_code, 
              `MSOA name` = msoa_name,
              `MSOA House of Commons Library name` = hoc_msoa_name,
-             Neighbourhood = neighbourhood, 
-             `% of 2019 population in neighbourhood` = pct_of_lsoa)
+             `Neighbourhood number` = x6_areas_number,
+             `Neighbourhood name` = neighbourhood, 
+             `Number of lsoas` = num_lsoas
+             )
   }, 
   filter = "top", 
   rownames = FALSE,
