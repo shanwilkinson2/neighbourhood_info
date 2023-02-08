@@ -18,7 +18,7 @@ data_refresh_date <- "15/01/2023"
   neighbourhood_names <- unique(msoa_neighbourhood_multiple$neighbourhood) %>%
     sort()
 
-  neighbourhood_boundaries <- readRDS("neighbourhood boundaries.RDS")
+  neighbourhood_boundaries <- readRDS("neighbourhood_boundaries.RDS")
 
 # msoa data with summary & boundaries - single dataset to load for both neighbourhood & msoa level
   neighbourhood_indicators <- readRDS("neighbourhood_indicators.RDS")
