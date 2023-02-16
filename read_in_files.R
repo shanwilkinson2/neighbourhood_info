@@ -7,7 +7,7 @@
   neighbourhood_boundaries <- readRDS("./bolton_neighbourhoods/neighbourhood boundaries.RDS") # in the app folder
 
 # single dataset for the app
-  neighbourhood_indicators <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS") # in the app folder
+  neighbourhood_indicators <- readRDS("./bolton_neighbourhoods_app/neighbourhood_indicators.RDS") # in the app folder
 
 # lookups
   lsoa_neighbourhood <- readRDS("lsoa_neighbourhood.rds")
