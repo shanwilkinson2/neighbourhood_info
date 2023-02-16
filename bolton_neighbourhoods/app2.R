@@ -108,6 +108,7 @@ ui <-  dashboardPage(skin = "yellow",
                          
                          # tab1
                          tabItem(tabName = "table_tab",
+                                 downloadButton("bttn_data", "Get all data (csv)"),
                                  h2(textOutput("selected_neighbourhood")),
                                  h3(textOutput("selected_domain")),
                                  DT::DTOutput("table1")
@@ -438,6 +439,13 @@ server <- function(input, output) {
                   label = ~paste(neighbourhood_name, "neighbourhood")) 
   })
   
+  
+  # generate data for download button
+  output$bttn_data <- downloadHandler(filename = "neighbourhood_data.csv",
+                                      # create file for downloading
+                                      content = function(file){
+                                        write.csv(neighbourhood_data, file)
+                                      })
   
 }
 
