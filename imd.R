@@ -64,7 +64,7 @@ lsoa_neighbourhood <- read.xlsx("6 neighbourhoods final option.xlsx") %>%
     )
 
 # add in neighbourhood
-lsoa_standardised <- imd_overall %>%
+lsoa_standardised <- imd_all %>%
   full_join(lsoa_neighbourhood,
             by = c("lsoa_code_2011" = "lsoa_name")) %>%
   group_by(IndicatorName) %>%
