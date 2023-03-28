@@ -55,7 +55,8 @@ ui <-  dashboardPage(skin = "yellow",
                          menuItem("Using this tool", tabName = "using", icon = icon("map-signs")),
                          menuItem("Table", tabName = "table_tab", icon = icon("table")),
                          menuItem("Chart", tabName = "chart_tab", icon = icon("chart-line")),
-                         menuItem("Map", tabName = "map", icon = icon("globe")),
+                         menuItem("Neighbourhood map", tabName = "map", icon = icon("globe")),
+                         menuItem("All areas map", tabName = "allareas_map", icon = icon("globe")),
                          menuItem("Differences", tabName = "z_scores", icon = icon("arrows-alt-h")),
                          menuItem("About neighbourhoods", tabName = "about_neighbourhoods", icon = icon("map-marked-alt")),
                          menuItem("About the data", tabName = "about", icon = icon("info"))
@@ -151,6 +152,19 @@ ui <-  dashboardPage(skin = "yellow",
                                  p("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicatos an area is low for Bolton on the chosen indicator."),
                                  p("A neighbourhood may be made up of all darker areas, or all lighter areas or a mix. If the neighbourhood is more similar overall on an indicator, the colours will be more simliar. Check out the chart for a clearer view of how the neighbourhood compares to Bolton as a whole."),
                                  p("Very different colours indicate where there may be pockets of difference."),
+                                 p("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world.")
+                         ),
+                         
+                         # all areas map
+                         tabItem(tabName = "allareas_map",
+                                 h3(textOutput("selected_indicator")),
+                                 leafletOutput("allareas_map"),
+                                 br(),
+                                 h3("How to interpret this map"),
+                                 p("This map shows variation over the whole of Bolton ."),
+                                 p("The boundaries don't quite match, you can see where they are different."),
+                                 p("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicatos an area is low for Bolton on the chosen indicator."),
+                                 p("A neighbourhood may be made up of all darker areas, or all lighter areas or a mix. If the neighbourhood is more similar overall on an indicator, the colours will be more simliar. Check out the chart for a clearer view of how the neighbourhood compares to Bolton as a whole."),
                                  p("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world.")
                          ),
                          
@@ -288,6 +302,36 @@ server <- function(input, output) {
       addResetMapButton() %>%
       addProviderTiles("Stamen.TonerLite") %>%
       addPolylines(data = neighbourhood_boundary(), weight = 4, color = "red") %>%
+      addPolygons( #data = map_data(), 
+        weight = 0.75, color = "black", 
+        fillColor = ~msoa_pal()(Value), fillOpacity = 0.5, 
+        highlight = highlightOptions(weight = 4, color = "grey"),
+        #label = lapply(mylabels, HTML),
+        label = ~paste0(AreaName, ", ", hoc_msoa_name, ". Indicator value: ", round(Value)), 
+        labelOptions = labelOptions(
+          style = list("font-weight" = "normal", padding = "3px 8px"),
+          textsize = "15px",
+          direction = "auto")) %>%
+      addLegend(
+        "bottomright",
+        pal = msoa_pal(),
+        values = ~Value,
+        labFormat = labelFormat(digits = 0),
+        title = "Area values",
+        opacity = 1
+      )
+  })
+  
+  # all neighbourhoods map 
+  output$allareas_map <- renderLeaflet({
+    
+    mylabels <- as.list(glue::glue("{map_data()$AreaName}, {map_data()$hoc_msoa_name}<br>
+                                     Indicator value: {round(map_data()$Value)}"))
+    
+    map_data() %>%
+      leaflet() %>%
+      addResetMapButton() %>%
+      addProviderTiles("Stamen.TonerLite") %>%
       addPolygons( #data = map_data(), 
         weight = 0.75, color = "black", 
         fillColor = ~msoa_pal()(Value), fillOpacity = 0.5, 
