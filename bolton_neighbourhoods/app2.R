@@ -13,31 +13,31 @@ library(DT)
 data_refresh_date <- "15/01/2023"
 
 # neighbourhood/ msoa lookup table
-  msoa_neighbourhood_multiple <- readRDS("msoa_neighbourhood_multiple.RDS")
+msoa_neighbourhood_multiple <- readRDS("msoa_neighbourhood_multiple.RDS")
 
-  neighbourhood_names <- unique(msoa_neighbourhood_multiple$neighbourhood) %>%
-    sort()
+neighbourhood_names <- unique(msoa_neighbourhood_multiple$neighbourhood) %>%
+  sort()
 
-  neighbourhood_boundaries <- readRDS("neighbourhood_boundaries.RDS")
+neighbourhood_boundaries <- readRDS("neighbourhood_boundaries.RDS")
 
 # msoa data with summary & boundaries - single dataset to load for both neighbourhood & msoa level
-  neighbourhood_indicators <- readRDS("neighbourhood_indicators.RDS")
+neighbourhood_indicators <- readRDS("neighbourhood_indicators.RDS")
 
 # single dataset filtered for neighbourhood only
-  neighbourhood_data <- neighbourhood_indicators %>%
-    st_drop_geometry() %>%
-    group_by(IndicatorId, Sex, Age, neighbourhood) %>%
-    slice(1) %>% # first row only per neighbourhood, so will give neighbourood values as same for every msoa in the neighbourhood
-    ungroup() %>%
-    select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name)) %>%
-    relocate(nbourhood_min, .before = nbourhood_max) %>%
-    mutate(across(.cols = nbourhood_pct:england_q3, 
-                  .fns = ~round(.x, 1)
-    ))
+neighbourhood_data <- neighbourhood_indicators %>%
+  st_drop_geometry() %>%
+  group_by(IndicatorId, Sex, Age, neighbourhood) %>%
+  slice(1) %>% # first row only per neighbourhood, so will give neighbourood values as same for every msoa in the neighbourhood
+  ungroup() %>%
+  select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name)) %>%
+  relocate(nbourhood_min, .before = nbourhood_max) %>%
+  mutate(across(.cols = nbourhood_pct:england_q3, 
+                .fns = ~round(.x, 1)
+  ))
 
 # single dataset filtered for msoa only
-  msoa_data <- neighbourhood_indicators %>%
-    select(neighbourhood, AreaName, hoc_msoa_name, msoa11cd:IndicatorName, Value)
+msoa_data <- neighbourhood_indicators %>%
+  select(neighbourhood, AreaName, hoc_msoa_name, msoa11cd:IndicatorName, Value)
 
 
 #######################################################################
@@ -55,7 +55,7 @@ ui <-  dashboardPage(skin = "yellow",
                          menuItem("Using this tool", tabName = "using", icon = icon("map-signs")),
                          menuItem("Table", tabName = "table_tab", icon = icon("table")),
                          menuItem("Chart", tabName = "chart_tab", icon = icon("chart-line")),
-                         menuItem("Neighbourhood map", tabName = "map", icon = icon("globe")),
+                         menuItem("Neighbourhood map", tabName = "neigh_map", icon = icon("map-location-dot")),
                          menuItem("All areas map", tabName = "allareas_map", icon = icon("globe")),
                          menuItem("Differences", tabName = "z_scores", icon = icon("arrows-alt-h")),
                          menuItem("About neighbourhoods", tabName = "about_neighbourhoods", icon = icon("map-marked-alt")),
@@ -109,7 +109,6 @@ ui <-  dashboardPage(skin = "yellow",
                          
                          # tab1
                          tabItem(tabName = "table_tab",
-                                 downloadButton("bttn_data", "Get all data (csv)"),
                                  h2(textOutput("selected_neighbourhood")),
                                  h3(textOutput("selected_domain")),
                                  DT::DTOutput("table1")
@@ -139,35 +138,34 @@ ui <-  dashboardPage(skin = "yellow",
                                  p("Compare Bolton and England in a similar way - Bolton may be much higher or lower than England, so an issue may still be important for a neighbourhood even if it is similar to the Bolton picture."),
                          ),
                          
-                         # map
-                         tabItem(tabName = "map",
+                         # neighbourhood map
+                         tabItem(tabName = "neigh_map",
                                  #h2(textOutput("selected_neighbourhood")), # makes all reactive stuff not show
-                                 h3(textOutput("selected_indicator")),
+                                 h3("Neighbourhood Map"),
                                  leafletOutput("indicator_map"),
                                  br(),
                                  h3("How to interpret this map"),
                                  p("This map shows variation within the neighbourhood."),
                                  p("The orange boundary shows the neighbourhood boundary. The coloured areas show the smaller areas which are combined in this tool to give neighbourhood level information."),
                                  p("The boundaries don't quite match, you can see where they are different."),
-                                 p("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicatos an area is low for Bolton on the chosen indicator."),
+                                 p("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicates an area is low for Bolton on the chosen indicator."),
                                  p("A neighbourhood may be made up of all darker areas, or all lighter areas or a mix. If the neighbourhood is more similar overall on an indicator, the colours will be more simliar. Check out the chart for a clearer view of how the neighbourhood compares to Bolton as a whole."),
                                  p("Very different colours indicate where there may be pockets of difference."),
                                  p("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world.")
                          ),
                          
-                         # all areas map
+                         # map2
+                         
                          tabItem(tabName = "allareas_map",
-                                 h3(textOutput("selected_indicator")),
+                                 h3("All areas map"),
                                  leafletOutput("allareas_map"),
                                  br(),
                                  h3("How to interpret this map"),
-                                 p("This map shows variation over the whole of Bolton ."),
-                                 p("The boundaries don't quite match, you can see where they are different."),
-                                 p("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicatos an area is low for Bolton on the chosen indicator."),
-                                 p("A neighbourhood may be made up of all darker areas, or all lighter areas or a mix. If the neighbourhood is more similar overall on an indicator, the colours will be more simliar. Check out the chart for a clearer view of how the neighbourhood compares to Bolton as a whole."),
+                                 p("This map shows variation across the whole of Bolton."),
+                                 p("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicates an area is low for Bolton on the chosen indicator."),
                                  p("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world.")
-                         ),
-                         
+                                 ),
+
                          # difference from England
                          tabItem(tabName = "z_scores",
                                  h3("How different is the selected neighbourhood from England?"),
@@ -290,7 +288,7 @@ server <- function(input, output) {
       na.color = "white")
   })
   
-  # map itself
+  # neighbourhood map
   output$indicator_map <- renderLeaflet({
     
     mylabels <- as.list(glue::glue("{map_data()$AreaName}, {map_data()$hoc_msoa_name}<br>
@@ -312,6 +310,7 @@ server <- function(input, output) {
           style = list("font-weight" = "normal", padding = "3px 8px"),
           textsize = "15px",
           direction = "auto")) %>%
+      addControl(glue::glue("<b>{input$select_indicator}</b><br>Neighbourhood: {input$select_neighbourhood}"), position = "topright") %>%
       addLegend(
         "bottomright",
         pal = msoa_pal(),
@@ -322,7 +321,7 @@ server <- function(input, output) {
       )
   })
   
-  # all neighbourhoods map 
+  # allareas map
   output$allareas_map <- renderLeaflet({
     
     mylabels <- as.list(glue::glue("{map_data()$AreaName}, {map_data()$hoc_msoa_name}<br>
@@ -332,6 +331,7 @@ server <- function(input, output) {
       leaflet() %>%
       addResetMapButton() %>%
       addProviderTiles("Stamen.TonerLite") %>%
+      addPolylines(data = neighbourhood_boundary(), weight = 4, color = "red") %>%
       addPolygons( #data = map_data(), 
         weight = 0.75, color = "black", 
         fillColor = ~msoa_pal()(Value), fillOpacity = 0.5, 
@@ -342,6 +342,7 @@ server <- function(input, output) {
           style = list("font-weight" = "normal", padding = "3px 8px"),
           textsize = "15px",
           direction = "auto")) %>%
+      addControl(glue::glue("<b>{input$select_indicator}</b>"), position = "topright") %>%
       addLegend(
         "bottomright",
         pal = msoa_pal(),
@@ -464,7 +465,7 @@ server <- function(input, output) {
              `Neighbourhood number` = x6_areas_number,
              `Neighbourhood name` = neighbourhood, 
              `Number of lsoas` = num_lsoas
-             )
+      )
   }, 
   filter = "top", 
   rownames = FALSE,
@@ -483,13 +484,6 @@ server <- function(input, output) {
                   label = ~paste(neighbourhood_name, "neighbourhood")) 
   })
   
-  
-  # generate data for download button
-  output$bttn_data <- downloadHandler(filename = "neighbourhood_data.csv",
-                                      # create file for downloading
-                                      content = function(file){
-                                        write.csv(neighbourhood_data, file)
-                                      })
   
 }
 
