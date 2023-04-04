@@ -29,7 +29,7 @@ neighbourhood_data <- neighbourhood_indicators %>%
   group_by(IndicatorId, Sex, Age, neighbourhood) %>%
   slice(1) %>% # first row only per neighbourhood, so will give neighbourood values as same for every msoa in the neighbourhood
   ungroup() %>%
-  select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name)) %>%
+  #select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name)) %>%
   relocate(nbourhood_min, .before = nbourhood_max) %>%
   mutate(across(.cols = nbourhood_pct:england_q3, 
                 .fns = ~round(.x, 1)
@@ -201,6 +201,13 @@ ui <-  dashboardPage(skin = "yellow",
                                  p("MSOAs have been used to approximate neighbourhoods. MSOAs are included in every neighbourhood in which they at least partly fall. The difference in boundaries is visible on the map."), 
                                  p(glue::glue("Data last refreshed: {data_refresh_date}")),
                                  br(),
+                                 
+                                 h2("Deprivation"),
+                                 p("Deprivation data is from the ", a("English Indices of Deprivation, 2019", 
+                                                                      href = "https://www.gov.uk/government/statistics/english-indices-of-deprivation-2019", 
+                                                                      target = "_blank"), "."), 
+                                 
+                                 br(),
                                  h2("Interim issues while this tool is under development"),
                                  p("Columns named as 'neighbourhood calculated value' relate to those where the data is provided as a numerator & denominator, which is then combined to create a % for the neighbourood. Some of these indicators are not percentages so look dodgy."), 
                                  p("Columns named as 'neighbourhood average, min or max' give the median, minimum & maximum of the values for MSOAs falling within that neighbourhood."),
@@ -310,7 +317,7 @@ server <- function(input, output) {
           style = list("font-weight" = "normal", padding = "3px 8px"),
           textsize = "15px",
           direction = "auto")) %>%
-      addControl(glue::glue("<b>{input$select_indicator}</b><br>Neighbourhood: {input$select_neighbourhood}"), position = "topright") %>%
+      addControl(glue::glue("<b>{input$select_indicator}</b><br>Neighbourhood: {input$select_neighbourhood}{ifelse(input$select_domain == 'Deprivation', ', Low number = more deprived', '')}"), position = "topright") %>%
       addLegend(
         "bottomright",
         pal = msoa_pal(),
@@ -331,18 +338,16 @@ server <- function(input, output) {
       leaflet() %>%
       addResetMapButton() %>%
       addProviderTiles("Stamen.TonerLite") %>%
-      addPolylines(data = neighbourhood_boundary(), weight = 4, color = "red") %>%
-      addPolygons( #data = map_data(), 
+      addPolygons( 
         weight = 0.75, color = "black", 
         fillColor = ~msoa_pal()(Value), fillOpacity = 0.5, 
         highlight = highlightOptions(weight = 4, color = "grey"),
-        #label = lapply(mylabels, HTML),
         label = ~paste0(AreaName, ", ", hoc_msoa_name, ". Indicator value: ", round(Value)), 
         labelOptions = labelOptions(
           style = list("font-weight" = "normal", padding = "3px 8px"),
           textsize = "15px",
           direction = "auto")) %>%
-      addControl(glue::glue("<b>{input$select_indicator}</b>"), position = "topright") %>%
+      addControl(glue::glue("<b>{input$select_indicator}</b>{ifelse(input$select_domain == 'Deprivation', '<br>Low number = more deprived', '')}"), position = "topright") %>%
       addLegend(
         "bottomright",
         pal = msoa_pal(),
