@@ -4,6 +4,7 @@ library(dplyr)
 library(openxlsx)
 library(tidyr)
 library(stringr)
+library(sf)
 
 # [1] "msoa11cd"                            "IndicatorId"                         "IndicatorName"                      
 # [4] "ParentCode"                          "ParentName"                          "AreaCode"                           
@@ -60,23 +61,31 @@ lsoa_neighbourhood <- read.xlsx("6 neighbourhoods final option.xlsx") %>%
   imd_all <- bind_rows(imd_overall, imd_domains, suppl_incices, sub_domains) %>%
     mutate(IndicatorName = str_replace_all(IndicatorName, "\\.", " "),
            IndicatorName = str_replace(IndicatorName, "\\s\\(where 1 is most deprived\\)", ""),
-           IndicatorName = str_replace(IndicatorName, "\\s\\(where 1 is most deprived 10% of LSOAs\\)", "")
-    )
+           IndicatorName = str_replace(IndicatorName, "\\s\\(where 1 is most deprived 10% of LSOAs\\)", ""),
+           IndicatorName = ifelse(IndicatorName == "Index of Multiple Deprivation (IMD) Decile",
+                                  "* Index of Multiple Deprivation (IMD) Decile", IndicatorName),
+           IndicatorName = ifelse(IndicatorName == "Index of Multiple Deprivation (IMD) Rank",
+                                  "* Index of Multiple Deprivation (IMD) Rank", IndicatorName)
+          
+    ) %>%
+    mutate(
+      DomainName = "Deprivation",
+      Sex = NA,
+      Age = NA,
+      lsoa_z = (Value - mean(Value, na.rm = TRUE))/ sd(Value, na.rm = TRUE)
+    ) %>%
+    group_by(IndicatorName) %>%
+    mutate(IndicatorId = cur_group_id()) %>%
+    ungroup()
 
 # add in neighbourhood
-lsoa_standardised <- imd_all %>%
+  nbourhood_indicators <- imd_all %>%
   full_join(lsoa_neighbourhood,
             by = c("lsoa_code_2011" = "lsoa_name")) %>%
   group_by(IndicatorName) %>%
-  mutate(
-    lsoa_z = (Value - mean(Value, na.rm = TRUE))/ sd(Value, na.rm = TRUE)
-  ) %>%
   filter(local_authority_district_name_2019 == "Bolton")  %>%
   ungroup() %>%
-  rename(neighbourhood = x6_areas_name)
-
-
-nbourhood_indicators <- lsoa_standardised %>%
+  rename(neighbourhood = x6_areas_name) %>%
   group_by(IndicatorName, neighbourhood) %>%
   mutate(nbourhood_count = NA, 
          nbourhood_denominator = NA,
@@ -112,3 +121,33 @@ nbourhood_indicators <- lsoa_standardised %>%
          bolton_q1 = quantile(Value, 0.25, na.rm = TRUE),
          bolton_median = median(Value, na.rm = TRUE),
          bolton_q3 = quantile(Value, 0.75, na.rm = TRUE))
+
+# england LSOA max/min
+england_min_max <- imd_all %>%
+  group_by(IndicatorName) %>%
+  mutate(
+    england_min = min(Value, na.rm = TRUE),
+    england_max = max(Value, na.rm = TRUE),
+    england_q1 = quantile(Value, 0.25, na.rm = TRUE),
+    england_median = median(Value, na.rm = TRUE),
+    england_q3 = quantile(Value, 0.75, na.rm = TRUE)) %>%
+  slice(1) %>%
+  select(IndicatorName, england_min:england_q3) 
+  
+
+# get lsoa boundaries
+lsoa_boundaries <- readRDS("lsoa_boundaries.RDS")
+
+# join in england values
+nbourhood_indicators2 <- lsoa_boundaries %>%
+  left_join( 
+    nbourhood_indicators,
+    by = c("LSOA21CD" = "lsoa_code_2011")) %>%
+  full_join(england_min_max, by = "IndicatorName") %>%
+  relocate(z_nbourhood_median_abs_direction, .before = nbourhood_pct) %>%
+  rename(AreaName = LSOA21NM, hoc_msoa_name = msoa_hoc_name)
+
+# join to msoa data
+msoa_data <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS") %>%
+  bind_rows(nbourhood_indicators2) %>%
+  saveRDS("./bolton_neighbourhoods/neighbourhood_indicators2.RDS")
