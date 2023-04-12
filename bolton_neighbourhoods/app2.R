@@ -142,6 +142,7 @@ ui <-  dashboardPage(skin = "yellow",
                          tabItem(tabName = "neigh_map",
                                  #h2(textOutput("selected_neighbourhood")), # makes all reactive stuff not show
                                  h3("Neighbourhood Map"),
+                                 tags$style(type = "text/css", "#indicator_map {height: calc(100vh - 450px) !important;}"),
                                  leafletOutput("indicator_map"),
                                  br(),
                                  h3("How to interpret this map"),
@@ -158,6 +159,8 @@ ui <-  dashboardPage(skin = "yellow",
                          
                          tabItem(tabName = "allareas_map",
                                  h3("All areas map"),
+                                 # adjusts height of map to be full window minus some for header + box at bottom
+                                 tags$style(type = "text/css", "#allareas_map {height: calc(100vh - 350px) !important;}"),
                                  leafletOutput("allareas_map"),
                                  br(),
                                  h3("How to interpret this map"),
