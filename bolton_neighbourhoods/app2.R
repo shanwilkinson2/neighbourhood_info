@@ -136,12 +136,14 @@ ui <-  dashboardPage(skin = "yellow",
                                  p("Are the neighbourhoood bar and whiskers narrow? This indicates the whole neighbourhood is quite similar on this indicator."),
                                  p("A wide bar and whiskers suggest a neighbourhood with a lot of variation on this indicator. Check out the map for this indicator to find out more about where the variation is."),
                                  p("Compare Bolton and England in a similar way - Bolton may be much higher or lower than England, so an issue may still be important for a neighbourhood even if it is similar to the Bolton picture."),
+                                 p("Note - Census 2021 figrues are not age standardised, differences between areas may be due to different population makeups, please take care when interpreting.")
                          ),
                          
                          # neighbourhood map
                          tabItem(tabName = "neigh_map",
                                  #h2(textOutput("selected_neighbourhood")), # makes all reactive stuff not show
                                  h3("Neighbourhood Map"),
+                                 tags$style(type = "text/css", "#indicator_map {height: calc(100vh - 450px) !important;}"),
                                  leafletOutput("indicator_map"),
                                  br(),
                                  h3("How to interpret this map"),
@@ -151,19 +153,23 @@ ui <-  dashboardPage(skin = "yellow",
                                  p("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicates an area is low for Bolton on the chosen indicator."),
                                  p("A neighbourhood may be made up of all darker areas, or all lighter areas or a mix. If the neighbourhood is more similar overall on an indicator, the colours will be more simliar. Check out the chart for a clearer view of how the neighbourhood compares to Bolton as a whole."),
                                  p("Very different colours indicate where there may be pockets of difference."),
-                                 p("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world.")
+                                 p("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world."),
+                                 p("Note - Census 2021 figrues are not age standardised, differences between areas may be due to different population makeups, please take care when interpreting.")
                          ),
                          
                          # map2
                          
                          tabItem(tabName = "allareas_map",
                                  h3("All areas map"),
+                                 # adjusts height of map to be full window minus some for header + box at bottom
+                                 tags$style(type = "text/css", "#allareas_map {height: calc(100vh - 350px) !important;}"),
                                  leafletOutput("allareas_map"),
                                  br(),
                                  h3("How to interpret this map"),
                                  p("This map shows variation across the whole of Bolton."),
                                  p("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicates an area is low for Bolton on the chosen indicator."),
-                                 p("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world.")
+                                 p("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world."),
+                                 p("Note - Census 2021 figrues are not age standardised, differences between areas may be due to different population makeups, please take care when interpreting.")
                                  ),
 
                          # difference from England
@@ -176,7 +182,8 @@ ui <-  dashboardPage(skin = "yellow",
                                  p("By default, indicators are sorted by standardised average score, so the most different from England are at the top. They might be different because they are much higher or much lower."),
                                  p("If a z score is zero, then it is exactly the same as the England average, so the further from zero the more different it is. If something is distributed 'normally' (many measures occur like this, with similar numbers low & high, with most values in the middle) 95% will fall between +1.96 & -1.96"),
                                  p("Range per neighbourhood is also given, you can sort by these columns to identify indicators where there is a great deal of or very little variation within the neighbourhood."),
-                                 p("You can use this table together with the map and chart to see which indicators to focus on and find out more about from elsewhere.")
+                                 p("You can use this table together with the map and chart to see which indicators to focus on and find out more about from elsewhere."),
+                                 p("Note - Census 2021 figrues are not age standardised, differences between areas may be due to different population makeups, please take care when interpreting.")
                          ),
                          
                          # about neighbourhoods
@@ -186,7 +193,7 @@ ui <-  dashboardPage(skin = "yellow",
                                  h3("What are neighbourhoods?"),
                                  p("Neighbourhoods are a local geography, created for integrated health and social care."),
                                  p("The map above shows Bolton's neighbourhoods."),
-                                 p("Bolton's neighbourhoods are made up of Lower Super Output Areas (LSOAs), but the data in this tool is only available at MSOA, which is bigger so the boundaries don't quite match."),
+                                 p("Bolton's neighbourhoods are made up of Lower Super Output Areas (LSOAs), but not all data in this tool is only available at MSOA, which is bigger so the boundaries don't quite match."),
                                  h3("MSOA neighbourhood lookup"),
                                  DT::DTOutput("msoa_neighbourhood_lookup")
                          ),
@@ -206,6 +213,12 @@ ui <-  dashboardPage(skin = "yellow",
                                  p("Deprivation data is from the ", a("English Indices of Deprivation, 2019", 
                                                                       href = "https://www.gov.uk/government/statistics/english-indices-of-deprivation-2019", 
                                                                       target = "_blank"), "."), 
+                                 br(),
+                                 h2("Census 2021"),
+                                 p("Data obtained from ", a("Nomis", 
+                                                            href = "https://www.nomisweb.co.uk/sources/census_2021_bulk", 
+                                                            target = "_blank"), "."),
+                                 p("Note - Census 2021 figrues are not age standardised, differences between areas may be due to differnet population makeups, please take care when interpreting."),
                                  
                                  br(),
                                  h2("Interim issues while this tool is under development"),
