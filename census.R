@@ -36,76 +36,53 @@ census_files <- c("census2021-ts007a-lsoa.csv", "census2021-ts037-lsoa.csv",
                   "census2021-ts038-lsoa.csv", "census2021-ts039-lsoa.csv",
                   "census2021-ts040-lsoa.csv")
 
-
-
-## ************* make sure to add in 'census' into category name *************
-
-
 # census data
 # https://www.nomisweb.co.uk/sources/census_2021_bulk
 
 pivot_clean <- function(x){
   pivot_longer(x, cols = -c(1:4), # area name info
-               values_to = "Value", names_to = "IndicatorName") %>%
-    mutate(IndicatorName2 = str_split_fixed(IndicatorName, ": ", 2),
-           category = paste("Census 2021 -", IndicatorName2[1,1]),
-           IndicatorName = IndicatorName2[1,2]
-    ) %>%
-    select(-IndicatorName2) %>%
-    rename(Denominator = 4) %>% 
-    filter(str_detect(geography, "Bolton")) 
-}
+                values_to = "Num", names_to = "Name") %>%
+    tidyr::separate(Name, c("DomainName", "IndicatorName"), ": ") %>%
+    rename(Denominator = 4,
+           lsoa_code = `geography code`) %>%
+    mutate(DomainName = paste("Census 2021 -", DomainName),
+           IndicatorName = paste(IndicatorName, "%")) %>%
+  # keep England only (includes Wales)
+  filter(str_detect(lsoa_code, "E")) 
+  }
 
-census_data1 <- data.table::fread(census_files[1]) %>% 
-  pivot_clean()
-census_data2 <- data.table::fread(census_files[2]) %>% 
-  pivot_clean()
-census_data3 <- data.table::fread(census_files[3]) %>% 
-  pivot_clean()
-census_data4 <- data.table::fread(census_files[4]) %>% 
-  pivot_clean()
-census_data5 <- data.table::fread(census_files[5]) %>% 
-  pivot_clean()
+# read in & clean
+  for(i in 1:length(census_files)){ 
+    if(i == 1){ 
+    census_all <- data.table::fread(census_files[i]) %>% 
+      pivot_clean() 
+    } else {
+      census_all <- census_all %>%
+        bind_rows(
+          data.table::fread(census_files[i]) %>% 
+            pivot_clean() 
+        )
+    }
+    census_all 
+  }
 
-#################### reached here #####################################
-
-
-
-census_all <- #for(i in length(census_files)){ 
-  if(i ==1){
-  census_data <- data.table::fread(census_files[i]) %>% 
-    pivot_clean() %>%
-    bind_rows()
-  } %>%
-    census_data
-}
-
-census_all <- bind_rows(imd_overall, imd_domains, suppl_incices, sub_domains) %>%
-  mutate(IndicatorName = str_replace_all(IndicatorName, "\\.", " "),
-         IndicatorName = str_replace(IndicatorName, "\\s\\(where 1 is most deprived\\)", ""),
-         IndicatorName = str_replace(IndicatorName, "\\s\\(where 1 is most deprived 10% of LSOAs\\)", ""),
-         IndicatorName = ifelse(IndicatorName == "Index of Multiple Deprivation (IMD) Decile",
-                                "* Index of Multiple Deprivation (IMD) Decile", IndicatorName),
-         IndicatorName = ifelse(IndicatorName == "Index of Multiple Deprivation (IMD) Rank",
-                                "* Index of Multiple Deprivation (IMD) Rank", IndicatorName)
-         
-  ) %>%
+census_all2 <- census_all %>%
   mutate(
-    DomainName = "Deprivation",
+    Value = Num/Denominator*100,
     Sex = NA,
     Age = NA,
     lsoa_z = (Value - mean(Value, na.rm = TRUE))/ sd(Value, na.rm = TRUE)
   ) %>%
   group_by(IndicatorName) %>%
-  mutate(IndicatorId = cur_group_id()) %>%
+  mutate(IndicatorId = cur_group_id()+100) %>%
   ungroup()
 
 # add in neighbourhood
-nbourhood_indicators <- imd_all %>%
+nbourhood_indicators <- census_all2 %>%
   full_join(lsoa_neighbourhood,
-            by = c("lsoa_code_2011" = "lsoa_name")) %>%
+            by = c("lsoa_code" = "lsoa_name")) %>%
   group_by(IndicatorName) %>%
-  filter(local_authority_district_name_2019 == "Bolton")  %>%
+  filter(str_detect(geography, "Bolton")) %>%
   ungroup() %>%
   rename(neighbourhood = x6_areas_name) %>%
   group_by(IndicatorName, neighbourhood) %>%
@@ -145,7 +122,7 @@ nbourhood_indicators <- imd_all %>%
          bolton_q3 = quantile(Value, 0.75, na.rm = TRUE))
 
 # england LSOA max/min
-england_min_max <- imd_all %>%
+england_min_max <- census_all2 %>%
   group_by(IndicatorName) %>%
   mutate(
     england_min = min(Value, na.rm = TRUE),
@@ -164,7 +141,7 @@ lsoa_boundaries <- readRDS("lsoa_boundaries.RDS")
 nbourhood_indicators2 <- lsoa_boundaries %>%
   left_join( 
     nbourhood_indicators,
-    by = c("LSOA21CD" = "lsoa_code_2011")) %>%
+    by = c("LSOA21CD" = "lsoa_code")) %>%
   full_join(england_min_max, by = "IndicatorName") %>%
   relocate(z_nbourhood_median_abs_direction, .before = nbourhood_pct) %>%
   rename(AreaName = LSOA21NM, hoc_msoa_name = msoa_hoc_name)
@@ -172,5 +149,11 @@ nbourhood_indicators2 <- lsoa_boundaries %>%
 # join to msoa data
 msoa_data <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS") %>%
   bind_rows(nbourhood_indicators2) %>%
-  saveRDS("./bolton_neighbourhoods/neighbourhood_indicators2.RDS")
+  saveRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS")
 
+
+###################
+
+msoa_data <- msoa_data %>%
+  filter(!str_detect(DomainName, "Census 2021 - ")) %>%
+  saveRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS")
