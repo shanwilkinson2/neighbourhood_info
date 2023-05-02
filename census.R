@@ -86,6 +86,7 @@ nbourhood_indicators <- census_all2 %>%
   ungroup() %>%
   rename(neighbourhood = x6_areas_name) %>%
   group_by(IndicatorName, neighbourhood) %>%
+  ########### can calculate neighbourhood values #########################
   mutate(nbourhood_count = NA, 
          nbourhood_denominator = NA,
          nbourhood_pct = NA,
@@ -163,15 +164,12 @@ msoa_data <- msoa_data %>%
 # https://seer.cancer.gov/seerstat/tutorials/aarates/step3.html
 # https://data.hull.gov.uk/release-9-health-disability-and-unpaid-care/
 
-england_age <- data.table::fread("census2021-ts007a-ctry.csv") %>%
-  filter(geography == "England")
-
-england_age2 <- england_age %>%
-  pivot_longer(cols = -c(1:4), # area name info
-               values_to = "Num", names_to = "Name") %>%
-  tidyr::separate(Name, c("DomainName", "IndicatorName"), ": ") %>%
-  rename(Denominator = 4) %>%
-  mutate(agegroup_pct = Num/ Denominator * 100)
+england_age <- data.table::fread("census2021-england age.csv") %>%
+  filter(Countries == "England") %>%
+  janitor::clean_names() %>%
+  mutate(Denominator = sum(observation),
+         agegroup_pct = observation/ Denominator * 100
+         )
 
 #
 
@@ -188,10 +186,30 @@ lsoa_health2 <- lsoa_health %>%
   group_by(lsoa_name, age_6_categories) %>%
   mutate(DomainName = "Census 2021 - General Health (standardised)",
          Denominator = sum(observation),
-         crude_rate = observation/Denominator*100) 
+         crude_rate = observation/Denominator*100) %>%
+  rename(IndicatorName = 6, IndicatorCode = 5)
 
-  group_by(`Lower layer Super Output Areas Code`, `Age (6 categories)`) %>%
-  mutate(Denominator = sum(Observation))
+lsoa_disability2 <- lsoa_disability %>%
+  rename(lsoa_code = 1, lsoa_name = 2) %>%
+  group_by(lsoa_name, age_6_categories) %>%
+  mutate(DomainName = "Census 2021 - Disability (standardised)",
+         Denominator = sum(observation),
+         crude_rate = observation/Denominator*100) %>%
+  rename(IndicatorName = 6, IndicatorCode = 5)
 
+lsoa_health_disab <- bind_rows(lsoa_health2, lsoa_disability2)
 
-  
+rm(lsoa_health, lsoa_health2, lsoa_disability, lsoa_disability2)  
+
+lsoa_health_disab2 <- lsoa_health_disab %>%
+  left_join(england_age %>%
+              select(age_6_categories, agegroup_pct),
+            by = "age_6_categories") %>%
+  mutate(adj_rate = crude_rate * agegroup_pct / 100) %>%
+  group_by(lsoa_code, lsoa_name, DomainName, IndicatorName, IndicatorCode) %>%
+  summarise(std_rate = sum(adj_rate)) %>%
+  ungroup()
+
+lsoa_health_disab2 %>%
+  filter(stringr::str_detect(lsoa_name, "Bolton")) %>%
+  View()

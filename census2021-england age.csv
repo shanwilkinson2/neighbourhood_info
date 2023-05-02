@@ -1,0 +1,13 @@
+Countries Code,Countries,Age (6 categories) Code,Age (6 categories),Observation
+E92000001,England,1,Aged 15 years and under,10483091
+E92000001,England,2,Aged 16 to 24 years,5989233
+E92000001,England,3,Aged 25 to 34 years,7667865
+E92000001,England,4,Aged 35 to 49 years,10978438
+E92000001,England,5,Aged 50 to 64 years,10970119
+E92000001,England,6,Aged 65 years and over,10401301
+W92000004,Wales,1,Aged 15 years and under,548078
+W92000004,Wales,2,Aged 16 to 24 years,329080
+W92000004,Wales,3,Aged 25 to 34 years,382675
+W92000004,Wales,4,Aged 35 to 49 years,547659
+W92000004,Wales,5,Aged 50 to 64 years,637958
+W92000004,Wales,6,Aged 65 years and over,662044
