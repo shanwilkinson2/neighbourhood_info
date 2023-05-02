@@ -152,8 +152,46 @@ msoa_data <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS") %>%
   saveRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS")
 
 
-###################
+#################### remove existing to update
 
 msoa_data <- msoa_data %>%
   filter(!str_detect(DomainName, "Census 2021 - ")) %>%
   saveRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS")
+
+################### age standardising ###############################
+
+# https://seer.cancer.gov/seerstat/tutorials/aarates/step3.html
+# https://data.hull.gov.uk/release-9-health-disability-and-unpaid-care/
+
+england_age <- data.table::fread("census2021-ts007a-ctry.csv") %>%
+  filter(geography == "England")
+
+england_age2 <- england_age %>%
+  pivot_longer(cols = -c(1:4), # area name info
+               values_to = "Num", names_to = "Name") %>%
+  tidyr::separate(Name, c("DomainName", "IndicatorName"), ": ") %>%
+  rename(Denominator = 4) %>%
+  mutate(agegroup_pct = Num/ Denominator * 100)
+
+#
+
+lsoa_health <- data.table::fread("census2021-lsoa age gen health.csv") %>%
+  filter(str_detect(`Lower layer Super Output Areas Code`, "E")) %>%
+  janitor::clean_names()
+
+lsoa_disability <- data.table::fread("census2021-lsoa age disability.csv") %>%
+  filter(str_detect(`Lower layer Super Output Areas Code`, "E")) %>%
+  janitor::clean_names()
+
+lsoa_health2 <- lsoa_health %>%
+  rename(lsoa_code = 1, lsoa_name = 2) %>%
+  group_by(lsoa_name, age_6_categories) %>%
+  mutate(DomainName = "Census 2021 - General Health (standardised)",
+         Denominator = sum(observation),
+         crude_rate = observation/Denominator*100) 
+
+  group_by(`Lower layer Super Output Areas Code`, `Age (6 categories)`) %>%
+  mutate(Denominator = sum(Observation))
+
+
+  
