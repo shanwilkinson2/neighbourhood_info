@@ -21,7 +21,7 @@ neighbourhood_names <- unique(msoa_neighbourhood_multiple$neighbourhood) %>%
 neighbourhood_boundaries <- readRDS("neighbourhood_boundaries.RDS")
 
 # msoa data with summary & boundaries - single dataset to load for both neighbourhood & msoa level
-neighbourhood_indicators <- readRDS("neighbourhood_indicators.RDS")
+neighbourhood_indicators <- readRDS("neighbourhood_indicators2.RDS")
 
 # single dataset filtered for neighbourhood only
 neighbourhood_data <- neighbourhood_indicators %>%
