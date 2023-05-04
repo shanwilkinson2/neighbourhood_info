@@ -109,14 +109,21 @@ census_files <- c("census2021-ts007a-lsoa.csv", "census2021-ts037-lsoa.csv",
 # https://www.nomisweb.co.uk/sources/census_2021_bulk
 
 # function to clean non standardising census indicators
+  # disability has 3 colons separating a third bit
 pivot_clean <- function(x){
   pivot_longer(x, cols = -c(1:4), # area name info
                 values_to = "Num", names_to = "Name") %>%
-    tidyr::separate(Name, c("DomainName", "IndicatorName"), ": ") %>%
+    tidyr::separate(Name, c("DomainName", "IndicatorName", "IndicatorName2"), ": ") %>%
     rename(Denominator = 4,
            lsoa_code = `geography code`) %>%
     mutate(DomainName = paste("Census 2021 -", DomainName),
-           IndicatorName = paste(IndicatorName, "%")) %>%
+           IndicatorName = ifelse(!is.na(IndicatorName2), 
+                                  paste0(IndicatorName, " (", IndicatorName2, ")"),
+                                  IndicatorName
+                                  ),
+           IndicatorName = paste(IndicatorName, "%")
+           ) %>%
+    select(-IndicatorName2) %>%
   # keep England only (includes Wales)
   filter(str_detect(lsoa_code, "E")) 
   }
@@ -131,7 +138,7 @@ pivot_clean <- function(x){
         bind_rows(
           data.table::fread(census_files[i]) %>% 
             pivot_clean() 
-        )
+          )
     }
     census_all 
   }
