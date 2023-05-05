@@ -72,7 +72,7 @@ app_location <- "./bolton_neighbourhoods_app/"
 # includes value for Bolton to keep whole borough value
   # version where MSOAs appear in more than 1 neighbourhood
   msoa_neighbourhood_multiple <- data.table::fread("msoas_neighbourhood_multiple2.csv")
-  saveRDS(msoa_neighbourhood_multiple, paste0(app_location, "msoa_neighbourhood_multiple.RDS"))
+ # saveRDS(msoa_neighbourhood_multiple, paste0(app_location, "msoa_neighbourhood_multiple.RDS"))
   
   # save to app folder
   
@@ -218,12 +218,23 @@ app_location <- "./bolton_neighbourhoods_app/"
                                       select(msoa11cd), # only want the join field & geometry whcih sticks anyway
                                       nbourhood_indicators2b, # right join to keep geometry
                by = c("msoa11cd" = "msoa_code")
-                 )
+                 ) %>%
+    mutate(DomainName = paste("Local health -", DomainName))
 
   
-# save for app 
+# save for app ###############################
   saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods_app/neighbourhood_indicators.RDS")
 
+  #################### remove existing to update
+  
+  msoa_data <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS") %>%
+    filter(stringr::str_detect(DomainName, "Deprivation|Census 2021 -"))
+
+  
+  msoa_data %>%
+    bind_rows(nbourhood_indicators3) %>%
+    saveRDS("./bolton_neighbourhoods/neighbourhood_indicators2.RDS")  
+  
   
 # get rid of separate & intermediate files
    rm(bolton_local_health2, england_indicators, england_min_max, england_values, local_health, 
