@@ -53,11 +53,11 @@ ui <-  dashboardPage(skin = "yellow",
                        # tab selector menu
                        sidebarMenu(
                          menuItem("Using this tool", tabName = "using", icon = icon("map-signs")),
-                         menuItem("Table", tabName = "table_tab", icon = icon("table")),
-                         menuItem("Chart", tabName = "chart_tab", icon = icon("chart-line")),
                          menuItem("Neighbourhood map", tabName = "neigh_map", icon = icon("map-location-dot")),
                          menuItem("All areas map", tabName = "allareas_map", icon = icon("globe")),
+                         menuItem("Chart", tabName = "chart_tab", icon = icon("chart-line")),
                          menuItem("Differences", tabName = "z_scores", icon = icon("arrows-alt-h")),
+                         menuItem("Table", tabName = "table_tab", icon = icon("table")),
                          menuItem("About neighbourhoods", tabName = "about_neighbourhoods", icon = icon("map-marked-alt")),
                          menuItem("About the data", tabName = "about", icon = icon("info"))
                        ),
@@ -82,61 +82,36 @@ ui <-  dashboardPage(skin = "yellow",
                          # using this
                          tabItem(tabName = "using",
                                  h2("What is this?"),
-                                 p("This tool was developed by Bolton Council's public health intelligence team. It gives some information about the populations in Bolton's integrated care neighbourhoods & factors affecting their current & future health."),
-                                 p("It has been developed by combining data already available at small area level."),
-                                 p("Public Health England's Local Health profile forms the basis as it is a collection of quality assured information covering: population & demographic factors; wider determinants of health; health outcomes."),
+                                 p("This tool was developed by Bolton Council's public health intelligence team.",
+                                 "It gives some information about the populations in Bolton's integrated care neighbourhoods & factors affecting their current & future health.",
+                                 "It has been developed by combining data already available at small area level."),
+                                 p("The Office for Health Improvement and Disparities (OHID)'s Local Health profile forms the basis as it is a collection of quality assured information covering: population and demographic factors; wider determinants of health; health outcomes.",
+                                   "The tool also contains some indicators from the 2021 census that are particularly relevant to health.",
+                                   "It also contains all domains from the English Indices of Deprivation, as there are many differences in health by deprivation."),
                                  br(),
                                  h2("What should I do with this?"),
                                  p("Consider questions such as:"),
-                                 p("How is your neighbourhood different from or similar to Bolton or England as a whole? Small differences may not be important but big differences may be."),
-                                 p("Are there big differences within your neighbourhood or is it quite similar overall?"),
+                                 tags$li("How is your neighbourhood different from or similar to Bolton or England as a whole? Small differences may not be important but big differences may be."),
+                                 tags$li("Are there big differences within your neighbourhood or is it quite similar overall?"),
                                  br(),
                                  p("Consider this as one source of information in your decision making. Data, evidence & intelligence can help you decide, or shape your thinking but does not hold all the answers!"),
-                                 p("What decisions do you need to make? What information do you need to determine direction of travel & choose between options?"),
-                                 p("The information you need will most likely involve using data, evidence & intelligence alongside your professional judgement of what is feasible within your constraints & most likely to be successful."),
-                                 p("Often the perfect piece of information won't be available, do you have enough? Sometimes you won't feel you have enough but will still have to make a decision."),
+                                 tags$li("What decisions do you need to make? What information do you need to determine direction of travel & choose between options?"),
+                                 tags$li("The information you need will most likely involve using data, evidence & intelligence alongside your professional judgement of what is feasible within your constraints & most likely to be successful."),
+                                 tags$li("Often the perfect piece of information won't be available, do you have enough? Sometimes you won't feel you have enough but will still have to make a decision."),
+                                 br(),
                                  p("More data, evidence & intelligence always raises more questions, that's good! Use it to develop & test your questions & assumptions which hopefully will help you make better decisions."),
                                  br(),
                                  h2("How do I use this?"),
                                  p("This tool presents information on a range of indicators in a range of ways to help you explore different aspects of a neighbourhood, such as how a neighbourhood compares to Bolton as a whole & how much variation there is within a neighbourhood."),
-                                 p("Select a neighbourhood, domain & indicator (indicator only needed for the map) from the dropdowns on the left."),
-                                 p("The table shows all information in a traditional spreadsheet format."),
-                                 p("The chart shows how the neighbourhood values compare to Bolton and England as a whole."),
-                                 p("The map shows variation within the neighbourhood."),
-                                 p("The differences tab lets you see where neighbourhoods are most different from England as a whole."),
-                                 p("Use the different formats to explore the data & inform your decision making.")
-                         ),
-                         
-                         # tab1
-                         tabItem(tabName = "table_tab",
-                                 h2(textOutput("selected_neighbourhood")),
-                                 h3(textOutput("selected_domain")),
-                                 DT::DTOutput("table1")
-                         ),
-                         
-                         # chart
-                         tabItem(tabName = "chart_tab",
-                                 h3("Visualising the difference between neighbourhoods, Bolton & England"),
-                                 br(),
-                                 plotlyOutput("boxplot"),
-                                 br(),
-                                 DT::DTOutput("boxplot_table"),
-                                 br(),
-                                 h3("How to interpret this chart"),
-                                 p("This chart shows how the neighbourhood values compare to Bolton and England as a whole. It shows a mid point for each area, but also how they widely they vary."),
-                                 p("Each area is built up of MSOAs (a medium sized administrative geography)."),
-                                 p("The average (median) value for the MSOAs making up the larger area is the line inside the bar. For some (but not all) indicators, it is possible to calculate a value for the neighbourhood as a whole, this is given in the table below the chart; Bolton & England have a value for the area as a whole for all indicators, as they are standard areas."),
-                                 p("The whiskers show the values for the lowest and highest MSOAs within the area."),
-                                 p("The bar shows the range that the middle half of MSOAs in this area fall within."),
-                                 p("The left edge of the bar shows Quartile 1/ the 25th percentile, this is the value that a quarter (25%) of values are lower than. The right edge of the bar shows Quartile 3/ the 75th perceentile, this is the value that three-quarters (75%) of values are lower than. The middle half therefore fall between these values."),
-                                 p("The whiskers and bar may be symmetrical or not. If most areas are high on an indicator, but some are much lower (or vice versa), the chart may not look at all symmetrical."),
-                                 h3("How to use this chart"),
-                                 p("A neighbourhood bar & whiskers much further left than for Bolton shows the neighbourhood is at the low end for Bolton on this indicator, while a neighbourhood bar & whiskers much further right than the Bolton notch shows the neighbourhood is at the high end for Bolton."),
-                                 p("But look at the numbers at the bottom of the chart - it may be that the whole of Bolton is quite similar on an indicator & differences may not be big enough to be useful in the real world."),
-                                 p("Are the neighbourhoood bar and whiskers narrow? This indicates the whole neighbourhood is quite similar on this indicator."),
-                                 p("A wide bar and whiskers suggest a neighbourhood with a lot of variation on this indicator. Check out the map for this indicator to find out more about where the variation is."),
-                                 p("Compare Bolton and England in a similar way - Bolton may be much higher or lower than England, so an issue may still be important for a neighbourhood even if it is similar to the Bolton picture."),
-                                 p("Note - Census 2021 figrues are not age standardised, differences between areas may be due to different population makeups, please take care when interpreting.")
+                                 p("Select a neighbourhood, domain & indicator from the dropdowns on the left. Use the different ways the data is displayed to explore & inform your decision making."),
+                                 tags$li("Table - shows all information in a traditional spreadsheet format."),
+                                 tags$li("Chart - shows how the neighbourhood values compare to Bolton and England as a whole."),
+                                 tags$li("Neighbourhood map - shows variation within the neighbourhood."),
+                                 tags$li("All areas map - shows variation across the whole of Bolton"),
+                                 tags$li("Differences - lets you see where neighbourhoods are most different from England as a whole."),
+                                 tags$li("About neighbourhoods - explains what neighbourhoods are and where all the boundaries fall"),
+                                 tags$li("About the data - gives data sources"),
+                                 p("")
                          ),
                          
                          # neighbourhood map
@@ -147,18 +122,19 @@ ui <-  dashboardPage(skin = "yellow",
                                  leafletOutput("indicator_map"),
                                  br(),
                                  h3("How to interpret this map"),
-                                 p("This map shows variation within the neighbourhood."),
-                                 p("The orange boundary shows the neighbourhood boundary. The coloured areas show the smaller areas which are combined in this tool to give neighbourhood level information."),
-                                 p("The boundaries don't quite match, you can see where they are different."),
-                                 p("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicates an area is low for Bolton on the chosen indicator."),
-                                 p("A neighbourhood may be made up of all darker areas, or all lighter areas or a mix. If the neighbourhood is more similar overall on an indicator, the colours will be more simliar. Check out the chart for a clearer view of how the neighbourhood compares to Bolton as a whole."),
-                                 p("Very different colours indicate where there may be pockets of difference."),
-                                 p("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world."),
-                                 p("Note - Census 2021 figrues are not age standardised, differences between areas may be due to different population makeups, please take care when interpreting.")
-                         ),
+                                 p("This map shows variation within the neighbourhood.",
+                                 "The thick green boundary shows the neighbourhood boundary.",
+                                 "The coloured areas show the smaller areas which are combined in this tool to give neighbourhood level information."),
+                                 tags$li("For some indicators, the boundaries don't quite match, you can see where they are different."),
+                                 tags$li("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicates an area is low for Bolton on the chosen indicator."),
+                                 tags$li("A neighbourhood may be made up of all darker areas, or all lighter areas or a mix. If the neighbourhood is more similar overall on an indicator, the colours will be more simliar. Check out the chart for a clearer view of how the neighbourhood compares to Bolton as a whole."),
+                                 tags$li("Very different colours indicate where there may be pockets of difference."),
+                                 tags$li("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world."),
+                                 tags$li("Indicators marked 'standardised' are adjusted so it's as if all areas had the same population age structure.",
+                                         "This lets you compare indicators that are strongly associated with age, and let you see if areas are higher or lower than expected.")
+                              ),
                          
-                         # map2
-                         
+                         # all areas map
                          tabItem(tabName = "allareas_map",
                                  h3("All areas map"),
                                  # adjusts height of map to be full window minus some for header + box at bottom
@@ -167,23 +143,62 @@ ui <-  dashboardPage(skin = "yellow",
                                  br(),
                                  h3("How to interpret this map"),
                                  p("This map shows variation across the whole of Bolton."),
-                                 p("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicates an area is low for Bolton on the chosen indicator."),
-                                 p("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world."),
-                                 p("Note - Census 2021 figrues are not age standardised, differences between areas may be due to different population makeups, please take care when interpreting.")
+                                 tags$li("A darker colour indicates an area is high for Bolton on the chosen indicator, a lighter colour indicates an area is low for Bolton on the chosen indicator."),
+                                 tags$li("The hover gives the actual values for each area. Check the values - Bolton may be all quite similar on an indicator so a big change in colour may not reflect a difference that is big enough to be useful in the real world."),
+                                 tags$li("Indicators marked 'standardised' are adjusted so it's as if all areas had the same population age structure.",
+                                 "This lets you compare indicators that are strongly associated with age, and let you see if areas are higher or lower than expected.")
                                  ),
+                         
+                         # chart
+                         tabItem(tabName = "chart_tab",
+                                 h3("Visualising the difference between neighbourhoods, Bolton & England"),
+                                 br(),
+                                 plotlyOutput("boxplot"),
+                                 br(),
+                                 DT::DTOutput("boxplot_table"),
+                                 br(),
+                                 h3("How to interpret this chart"),
+                                 p("This chart shows how the neighbourhood values compare to Bolton and England as a whole. It shows a mid point for each area, but also how big the variation is within the areas.",
+                                   "Each area is built up of smaller areas, either MSOAs (a medium sized administrative geography) or LSOAs (a small administrative geography) depending on the indicator."),
+                                 tags$li("The average (median) value for the smaller areas making up the larger area is the line inside the bar. For some (but not all) indicators, there is a calculated value for the larger area as a whole, this is given in the table below the chart."),
+                                 tags$li("The whiskers show the values for the lowest and highest smaller areas within the larger area."),
+                                 tags$li("The bar shows the range that the middle half of smaller areas within the larger area fall into.",
+                                         "The left edge of the bar shows Quartile 1/ the 25th percentile, this is the value that a quarter (25%) of values are lower than. The right edge of the bar shows Quartile 3/ the 75th perceentile, this is the value that three-quarters (75%) of values are lower than. The middle half therefore fall between these values."),
+                                 tags$li("The whiskers and bar may be symmetrical or not. If most areas are high on an indicator, but some are much lower (or vice versa), the chart may not look at all symmetrical."),
+                                 tags$li("Indicators marked 'standardised' are adjusted so it's as if all areas had the same population age structure.",
+                                         "This lets you compare indicators that are strongly associated with age, and let you see if areas are higher or lower than expected."),
+                                 br(),
+                                 h3("How to use this chart"),
+                                 tags$li("A neighbourhood bar & whiskers much further left than for Bolton shows the neighbourhood is at the low end for Bolton on this indicator, while a neighbourhood bar & whiskers much further right than for Bolton shows the neighbourhood is at the high end for Bolton."),
+                                 tags$li("But look at the numbers at the bottom of the chart - it may be that the whole of Bolton is quite similar on an indicator & differences may not be big enough to be useful in the real world."),
+                                 tags$li("Are the neighbourhoood bar and whiskers narrow? This indicates the whole neighbourhood is quite similar on this indicator."),
+                                 tags$li("A wide bar and whiskers suggest a neighbourhood with a lot of variation on this indicator. Check out the map for this indicator to find out more about where the variation is."),
+                                 tags$li("Compare Bolton and England in a similar way - Bolton may be much higher or lower than England, so an issue may still be important for a neighbourhood even if it is similar to the Bolton picture.")
+                         ),
 
                          # difference from England
                          tabItem(tabName = "z_scores",
                                  h3("How different is the selected neighbourhood from England?"),
                                  DT::DTOutput("neighbourhood_z"),
                                  h3("How to interpret this table"),
-                                 p("This table shows how the selected neighbourhood compares with MSOAs all across England."),
-                                 p("Indicators are standardised using 'z scores' so it puts each indicator all on the same scale, to help see where the neighbourhood is most different."),
-                                 p("By default, indicators are sorted by standardised average score, so the most different from England are at the top. They might be different because they are much higher or much lower."),
-                                 p("If a z score is zero, then it is exactly the same as the England average, so the further from zero the more different it is. If something is distributed 'normally' (many measures occur like this, with similar numbers low & high, with most values in the middle) 95% will fall between +1.96 & -1.96"),
-                                 p("Range per neighbourhood is also given, you can sort by these columns to identify indicators where there is a great deal of or very little variation within the neighbourhood."),
-                                 p("You can use this table together with the map and chart to see which indicators to focus on and find out more about from elsewhere."),
-                                 p("Note - Census 2021 figrues are not age standardised, differences between areas may be due to different population makeups, please take care when interpreting.")
+                                 p("This table shows how the smaller areas making up the selected neighbourhood compare with other smaller areas all across England."),
+                                 tags$li("Indicators are adjusted using 'z scores' so it puts each indicator all on the same scale, to help see where the neighbourhood is most different."),
+                                 tags$li("By default, indicators are sorted by standardised average score, so the most different from England are at the top. They might be different because they are much higher or much lower."),
+                                 tags$li("If a z score is zero, then it is exactly the same as the England average, so the further from zero the more different it is. If something is distributed 'normally' (many measures occur like this, with similar numbers low & high, with most values in the middle) 95% will fall between +1.96 & -1.96"),
+                                 tags$li("Range per neighbourhood is also given, you can sort by these columns to identify indicators where there is a great deal of or very little variation within the neighbourhood."),
+                                 tags$li("You can use this table together with the map and chart to see which indicators to focus on and find out more about from elsewhere."),
+                                 tags$li("Indicators marked 'standardised' are adjusted so it's as if all areas had the same population age structure.",
+                                         "This lets you compare indicators that are strongly associated with age, and let you see if areas are higher or lower than expected.")
+                         ),
+                         
+                         # table tab
+                         tabItem(tabName = "table_tab",
+                                 h2(textOutput("selected_neighbourhood")),
+                                 br(),
+                                 downloadButton("bttn_data", "Download all neighbourhood data (csv)"),
+                                 br(),
+                                 h3(textOutput("selected_domain")),
+                                 DT::DTOutput("table1")
                          ),
                          
                          # about neighbourhoods
@@ -200,32 +215,57 @@ ui <-  dashboardPage(skin = "yellow",
                          
                          # data sources
                          tabItem(tabName = "about",
-                                 h2("Data source"),
-                                 p("Data is sourced from PHE fingertips local health dashboard. This gives more information about where the indicators come from."),
-                                 a("PHE Local Health profiles", href = "https://fingertips.phe.org.uk/profile/local-health/data#page/0/gid/1938133180/pat/402/par/E08000001/ati/3/iid/93744/age/28/sex/4/cid/4/tbm/1", 
-                                   target = "_blank"),
-                                 p("Local Health only goes down to MSOA (Middle Super Output Area) whereas Bolton's Neighbourhoods are built of LSOAs (Lower Super Output Areas) which have different boundaries."),
-                                 p("MSOAs have been used to approximate neighbourhoods. MSOAs are included in every neighbourhood in which they at least partly fall. The difference in boundaries is visible on the map."), 
-                                 p(glue::glue("Data last refreshed: {data_refresh_date}")),
+                                 h2("Data sources"),
+                                 p("Data in this tool is sourced from a variety of places.",
+                                   "This tab gives more information about where the indicators come from.", 
+                                   "This will help you if you need to to find out more about precisely how the indicators are gathered, or have queries about any further data issues."),
+                                 br(),
+                                 
+                                 h2("Local Health"),
+                                 tags$li("This data is sourced from the ",
+                                 a("OHID Fingertips Local Health dashboard", href = "https://fingertips.phe.org.uk/profile/local-health/data#page/0/gid/1938133180/pat/402/par/E08000001/ati/3/iid/93744/age/28/sex/4/cid/4/tbm/1", 
+                                   target = "_blank"), "."),
+                                 tags$li("Local Health only goes down to MSOA (Middle Super Output Area, a medium sized administrative geography) whereas Bolton's Neighbourhoods are built of LSOAs (Lower Super Output Areas, a small administrative geography) which have different boundaries.",
+                                 "MSOAs have been used to approximate neighbourhoods. MSOAs are included in every neighbourhood in which they at least partly fall. The difference in boundaries is visible on the map."), 
+                                 tags$li(glue::glue("Data last refreshed: {data_refresh_date}")),
                                  br(),
                                  
                                  h2("Deprivation"),
-                                 p("Deprivation data is from the ", a("English Indices of Deprivation, 2019", 
+                                 tags$li("Deprivation data is from the ", a("English Indices of Deprivation, 2019", 
                                                                       href = "https://www.gov.uk/government/statistics/english-indices-of-deprivation-2019", 
                                                                       target = "_blank"), "."), 
+                                 tags$li("The main geography for deprivation is LSOA (Lower Super Output Area, a small administrative geography) so the boundaries exactly match with neighbourhoods which are built of LSOAs."),
                                  br(),
+                                 
                                  h2("Census 2021"),
-                                 p("Data obtained from ", a("Nomis", 
+                                 tags$li("Data for this tool obtained from ", a("Nomis", 
                                                             href = "https://www.nomisweb.co.uk/sources/census_2021_bulk", 
-                                                            target = "_blank"), "."),
-                                 p("Note - Census 2021 figrues are not age standardised, differences between areas may be due to differnet population makeups, please take care when interpreting."),
+                                                            target = "_blank"), " and for the standardised data ",
+                                         a("ONS create a custom dataset",
+                                           href = "https://www.ons.gov.uk/datasets/create",
+                                           target = "_blank"), "."),
+                                 tags$li("There are many other useful census data resources, see ",
+                                         a("Bolton JSNA", 
+                                           href = "https://www.boltonjsna.org.uk/newandnotable#census", 
+                                           target = "_blank"), "."),
+                                 tags$li("Census data is available for a large range of geographies, LSOA (Lower Super Output Area, a small administrative geography) has been used here so the boundaries exactly match with neighbourhoods which are built of LSOAs."),
+                                 h3("Age standardising census data"),
+                                 tags$li("Unless otherwise stated, Census 2021 figrues are not age standardised."), 
+                                 tags$li("ONS usually presents indicators related to health as age standardised, as in an older population, you would expect poorer health, more disability and more unpaid care.", 
+                                         "Where the data is not standardised, differences between areas may be due to different population makeups, so please take care when interpreting."),
+                                 tags$li("Where age standardising has been done, 6 age groups were used: Aged 15 years and under; Aged 16 to 24 years; Aged 25 to 34 years; Aged 35 to 49 years; ",    
+                                          "Aged 50 to 64 years; Aged 65 years and over."),
+                                 tags$li("Each age group's rate on that indicator was multiplied by the proportion of the England population that this age group represents, following the methodology given by ",
+                                         a("US National Cancer Institute",
+                                           href = "https://seer.cancer.gov/seerstat/tutorials/aarates/step1.html",
+                                           target = "_blank"),
+                                         ". This has the effect of adjusting as if the population of each area was the exact same age makeup as that of the England population as a whole."),
+                                 tags$li("Standardised values are useful to compare areas to see if an area has higher or lower rates than expected, regardless if the areas are overall younger or older than each other."),
+                                 tags$li("Sometimes you will want to use the raw values, for example if you want to know how many people to provide a service to."),
+                                 tags$li("Not all of the indicators were available in the custom dataset tool so could not be age standardised."),
                                  
                                  br(),
-                                 h2("Interim issues while this tool is under development"),
-                                 p("Columns named as 'neighbourhood calculated value' relate to those where the data is provided as a numerator & denominator, which is then combined to create a % for the neighbourood. Some of these indicators are not percentages so look dodgy."), 
-                                 p("Columns named as 'neighbourhood average, min or max' give the median, minimum & maximum of the values for MSOAs falling within that neighbourhood."),
-                                 p("Columns marked as 'Bolton min or max' give the minimum and maximum values out of all Bolton MSOAs."),
-                                 br(),
+
                                  h2("Code"),
                                  p("The code for this app is on my github."),
                                  a("Github", href = "https://github.com/shanwilkinson2/neighbourhood_info", 
@@ -319,7 +359,6 @@ server <- function(input, output) {
       leaflet() %>%
       addResetMapButton() %>%
       addProviderTiles("Stamen.TonerLite") %>%
-      addPolylines(data = neighbourhood_boundary(), weight = 4, color = "red") %>%
       addPolygons( #data = map_data(), 
         weight = 0.75, color = "black", 
         fillColor = ~msoa_pal()(Value), fillOpacity = 0.5, 
@@ -330,6 +369,7 @@ server <- function(input, output) {
           style = list("font-weight" = "normal", padding = "3px 8px"),
           textsize = "15px",
           direction = "auto")) %>%
+      addPolylines(data = neighbourhood_boundary(), weight = 4, color = "aquamarine") %>%
       addControl(glue::glue("<b>{input$select_indicator}</b><br>Neighbourhood: {input$select_neighbourhood}{ifelse(input$select_domain == 'Deprivation', ', Low number = more deprived', '')}"), position = "topright") %>%
       addLegend(
         "bottomright",
@@ -418,7 +458,7 @@ server <- function(input, output) {
                 #hovertext = ~chart_data$nbourhood_count,
                 color = "orange"
       ) %>%
-      layout(title = boxplot_data()$IndicatorName,
+      layout(title = glue::glue("<b>{boxplot_data()$IndicatorName}{ifelse(input$select_domain == 'Deprivation', '<br>Low number = more deprived', '')}</b>"),
              xaxis = list(hoverformat = ".1f",
                           title = "Area values"))
   })
@@ -501,6 +541,15 @@ server <- function(input, output) {
       addPolygons(weight = 4, color = "red", fillOpacity = 0,
                   label = ~paste(neighbourhood_name, "neighbourhood")) 
   })
+  
+  # generate data for download button
+  output$bttn_data <- downloadHandler(filename = "all neighbourhoods data.csv",
+                                      # create file for downloading
+                                      content = function(file){
+                                        write.csv(neighbourhood_data %>%
+                                                    st_drop_geometry()
+                                                  , file)
+                                      })
   
   
 }
