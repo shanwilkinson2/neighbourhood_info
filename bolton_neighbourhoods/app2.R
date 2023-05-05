@@ -10,7 +10,7 @@ library(magrittr)
 library(DT)
 
 # load static datasets
-data_refresh_date <- "15/01/2023"
+data_refresh_date <- "05/05/2023"
 
 # neighbourhood/ msoa lookup table
 msoa_neighbourhood_multiple <- readRDS("msoa_neighbourhood_multiple.RDS")
@@ -21,7 +21,7 @@ neighbourhood_names <- unique(msoa_neighbourhood_multiple$neighbourhood) %>%
 neighbourhood_boundaries <- readRDS("neighbourhood_boundaries.RDS")
 
 # msoa data with summary & boundaries - single dataset to load for both neighbourhood & msoa level
-neighbourhood_indicators <- readRDS("neighbourhood_indicators2.RDS")
+neighbourhood_indicators <- readRDS("neighbourhood_indicators.RDS")
 
 # single dataset filtered for neighbourhood only
 neighbourhood_data <- neighbourhood_indicators %>%
