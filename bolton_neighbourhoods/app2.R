@@ -400,7 +400,10 @@ server <- function(input, output) {
           style = list("font-weight" = "normal", padding = "3px 8px"),
           textsize = "15px",
           direction = "auto")) %>%
+      addPolylines(data = neighbourhood_boundaries, weight = 4, color = "black", fillOpacity = 0,
+                  label = ~paste(neighbourhood_name, "neighbourhood"), group = "Neighbourhoods")  %>%
       addControl(glue::glue("<b>{input$select_indicator}</b>{ifelse(input$select_domain == 'Deprivation', '<br>Low number = more deprived', '')}"), position = "topright") %>%
+      addLayersControl(overlayGroups = c("Neighbourhoods")) %>%
       addLegend(
         "bottomright",
         pal = msoa_pal(),
