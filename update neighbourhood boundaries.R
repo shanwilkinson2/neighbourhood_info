@@ -6,7 +6,7 @@
   library(sf)
   
   neighbourhood_boundaries6 <- st_read("C:/temp/Neighbourhood_boundaries_2023_10.geojson")
-  saveRDS(neighbourhood_boundaries6, "Neighbourhood bouncaries6.RDS")
+  saveRDS(neighbourhood_boundaries6, "neighbourhood boundaries6.RDS")
 
 # update lookups
   # lsoa - neighbourhood

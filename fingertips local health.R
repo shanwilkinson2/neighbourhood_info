@@ -1,4 +1,6 @@
 
+# create file "local_health_plus_boundaries.RDS"
+
 #################### load packages ################################
 
 library(dplyr)
@@ -71,7 +73,7 @@ app_location <- "./bolton_neighbourhoods_app/"
 #   msoa_neighbourhood <- readRDS("msoas_neighbourhood.RDS")
 # includes value for Bolton to keep whole borough value
   # version where MSOAs appear in more than 1 neighbourhood
-  msoa_neighbourhood_multiple <- data.table::fread("msoas_neighbourhood_multiple2.csv")
+  msoa_neighbourhood_multiple <- readRDS("msoas_neighbourhood_multiple3.RDS")
  # saveRDS(msoa_neighbourhood_multiple, paste0(app_location, "msoa_neighbourhood_multiple.RDS"))
   
   # save to app folder
@@ -88,10 +90,12 @@ app_location <- "./bolton_neighbourhoods_app/"
       left_join(local_health_indicators %>% select(-IndicatorName),
                 by = "IndicatorId") %>%
       arrange(GroupId) %>%
-      group_by(IndicatorId, Sex, Age, neighbourhood)  
+      group_by(IndicatorId, Sex, Age, neighbourhood_name)  
         
 ####### transform to neighbourhood level ##############################################################
 
+    nbh_msoa_lookup <- readRDS("msoas_neighbourhood_multiple3.RDS")
+    
     # msoa z score
     msoa_standardised <- local_health_all_msoa %>%
       filter(AreaType == "MSOA") %>%
@@ -101,8 +105,16 @@ app_location <- "./bolton_neighbourhoods_app/"
       mutate(
         msoa_z = (Value - mean(Value, na.rm = TRUE))/ sd(Value, na.rm = TRUE)
       ) %>%
-      filter(stringr::str_detect(AreaName, "^Bolton"))  %>%
+      # areaname is now MSOA hoc name, no longer e.g. "Bolton 001" so can't filter by that. 
+      # want Bolton only now have used all for standardisation
+      right_join(nbh_msoa_lookup %>%
+                   select(c(msoa_name, msoa_code, hoc_msoa_name)) %>%
+                            unique(),
+                          by = c("AreaCode" = "msoa_code")
+                 ) %>%
     ungroup()        
+    
+    rm(nbh_msoa_lookup)
     
 # combine indicators but keep msoa level so can have 1 dataset
   
@@ -111,7 +123,7 @@ app_location <- "./bolton_neighbourhoods_app/"
                   select(IndicatorId, Sex, Age, TimePeriodSortable, AreaCode, msoa_z), 
                 by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable", "AreaCode")
       ) %>%
-      group_by(IndicatorId, Sex, Age, TimePeriodSortable, neighbourhood) %>%
+      group_by(IndicatorId, Sex, Age, TimePeriodSortable, neighbourhood_name) %>%
       mutate(nbourhood_count = sum(Count), 
              nbourhood_denominator = sum(Denominator),
              nbourhood_pct = nbourhood_count/ nbourhood_denominator*100,
@@ -152,10 +164,10 @@ app_location <- "./bolton_neighbourhoods_app/"
   nbourhood_indicators2 <- left_join(
     nbourhood_indicators %>%
       ungroup() %>%
-      filter(neighbourhood != "Bolton"),
+      filter(neighbourhood_name != "Bolton"),
     nbourhood_indicators %>%
       ungroup() %>%
-      filter(neighbourhood == "Bolton") %>%
+      filter(neighbourhood_name == "Bolton") %>%
       select(IndicatorId, Sex, Age, TimePeriodSortable, bolton_value = nbourhood_median), # median will be the value as all bolton
     by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable"),
     suffix = c("_neighbourhood", "_bolton")
@@ -223,8 +235,9 @@ app_location <- "./bolton_neighbourhoods_app/"
 
   
 # save for app ###############################
-  saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods_app/neighbourhood_indicators.RDS")
-
+#  saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods_app/neighbourhood_indicators.RDS")
+    saveRDS(nbourhood_indicators3, "local_health_plus_boundaries.RDS")
+  
   #################### remove existing to update
   
   msoa_data <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS") %>%
