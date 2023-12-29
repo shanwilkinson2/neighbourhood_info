@@ -358,7 +358,7 @@ server <- function(input, output) {
       filter(neighbourhood == input$select_neighbourhood) %>%
       leaflet() %>%
       addResetMapButton() %>%
-      addProviderTiles("Stamen.TonerLite") %>%
+      addProviderTiles("Esri.WorldGrayCanvas") %>%
       addPolygons( #data = map_data(), 
         weight = 0.75, color = "black", 
         fillColor = ~msoa_pal()(Value), fillOpacity = 0.5, 
@@ -390,7 +390,7 @@ server <- function(input, output) {
     map_data() %>%
       leaflet() %>%
       addResetMapButton() %>%
-      addProviderTiles("Stamen.TonerLite") %>%
+      addProviderTiles("Esri.WorldGrayCanvas") %>%
       addPolygons( 
         weight = 0.75, color = "black", 
         fillColor = ~msoa_pal()(Value), fillOpacity = 0.5, 
@@ -540,7 +540,7 @@ server <- function(input, output) {
   output$neighbourhoods_map <- renderLeaflet({
     leaflet(neighbourhood_boundaries) %>%
       addResetMapButton() %>%
-      addProviderTiles("Stamen.TonerLite") %>%
+      addProviderTiles("Esri.WorldGrayCanvas") %>%
       addPolygons(weight = 4, color = "red", fillOpacity = 0,
                   label = ~paste(neighbourhood_name, "neighbourhood")) 
   })
