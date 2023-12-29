@@ -9,8 +9,6 @@ library(plotly)
 library(magrittr)
 library(DT)
 
-# test change
-
 # load static datasets
 data_refresh_date <- "05/05/2023"
 
