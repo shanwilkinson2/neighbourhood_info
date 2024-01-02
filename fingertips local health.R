@@ -50,21 +50,19 @@ app_location <- "./bolton_neighbourhoods_app/"
     local_health_borough <- fread("https://fingertips.phe.org.uk/api/all_data/csv/by_profile_id?child_area_type_id=402&parent_area_type_id=3&profile_id=143&parent_area_code=E08000001") %>%
       janitor::clean_names(case = "upper_camel") # upper camel case used in API json output & fingertipsR
 
-    # # prone to breaking...
-    # saveRDS(local_health_borough, "local_health_borough.RDS")
-    # local_health_borough <- readRDS("local_health_borough.RDS")
-
     # get all msoas local health data - takes a bit of a while
     local_health_all_msoa <- fread("https://fingertips.phe.org.uk/api/all_data/csv/by_profile_id?child_area_type_id=3&parent_area_type_id=15&profile_id=143") %>%
       janitor::clean_names(case = "upper_camel") # upper camel case used in API json output & fingertipsR
-    
-    # # prone to breaking...
-    # saveRDS(local_health_all_msoa, "local_health_all_msoa.RDS")
-    # local_healht_all_msoa <- readRDS("local_health_all_msoa.RDS")
 
+    # open neighbourhood lookup to get just bolton msoas
+    bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
+    select(-c(neighbourhood_num, neighbourhood_name)) %>%
+      unique()
+    
     # filter just bolton
     local_health_bolton_msoa <- local_health_all_msoa %>%
-      filter(stringr::str_detect(AreaName, "^Bolton") & AreaType == "MSOA")
+      # areaname is now MSOA hoc name, no longer e.g. "Bolton 001" so can't filter by that. 
+      filter(AreaCode %in% bolton_msoa_codes$msoa_code) 
 
   # join msoa & borough data
     local_health <- bind_rows(local_health_bolton_msoa, local_health_borough)
@@ -74,18 +72,14 @@ app_location <- "./bolton_neighbourhoods_app/"
 # includes value for Bolton to keep whole borough value
   # version where MSOAs appear in more than 1 neighbourhood
   msoa_neighbourhood_multiple <- readRDS("msoas_neighbourhood_multiple3.RDS")
- # saveRDS(msoa_neighbourhood_multiple, paste0(app_location, "msoa_neighbourhood_multiple.RDS"))
   
-  # save to app folder
-  
-
     # add in neighbourhood using multiple file
     bolton_local_health2 <- full_join(local_health, msoa_neighbourhood_multiple, 
-                                      by = c("AreaName"= "msoa_name")) %>%
+                                      by = c("AreaCode"= "msoa_code"),
+                                      relationship = "many-to-many") %>%
       # keep latest value only - only seems to include latest anyway
       group_by(IndicatorId, Sex, Age, AreaName) %>%
-      filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
-      ungroup() %>%
+            ungroup() %>%
       # add in domain ie part of the profile 
       left_join(local_health_indicators %>% select(-IndicatorName),
                 by = "IndicatorId") %>%
@@ -94,8 +88,6 @@ app_location <- "./bolton_neighbourhoods_app/"
         
 ####### transform to neighbourhood level ##############################################################
 
-    nbh_msoa_lookup <- readRDS("msoas_neighbourhood_multiple3.RDS")
-    
     # msoa z score
     msoa_standardised <- local_health_all_msoa %>%
       filter(AreaType == "MSOA") %>%
@@ -107,22 +99,19 @@ app_location <- "./bolton_neighbourhoods_app/"
       ) %>%
       # areaname is now MSOA hoc name, no longer e.g. "Bolton 001" so can't filter by that. 
       # want Bolton only now have used all for standardisation
-      right_join(nbh_msoa_lookup %>%
-                   select(c(msoa_name, msoa_code, hoc_msoa_name)) %>%
-                            unique(),
-                          by = c("AreaCode" = "msoa_code")
-                 ) %>%
+      filter(AreaCode %in% bolton_msoa_codes$msoa_code) 
     ungroup()        
     
-    rm(nbh_msoa_lookup)
+    rm(bolton_msoa_codes)
     
 # combine indicators but keep msoa level so can have 1 dataset
-  
+    # will have error code as no max/ min where neighbourhood = Bolton
     nbourhood_indicators <- bolton_local_health2 %>%
       left_join(msoa_standardised %>%
                   select(IndicatorId, Sex, Age, TimePeriodSortable, AreaCode, msoa_z), 
                 by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable", "AreaCode")
       ) %>%
+      # mutate(neighbourhood_name = ifelse(AreaName == "Bolton", "Bolton", neighbourhood_name)) %>%
       group_by(IndicatorId, Sex, Age, TimePeriodSortable, neighbourhood_name) %>%
       mutate(nbourhood_count = sum(Count), 
              nbourhood_denominator = sum(Denominator),
@@ -220,23 +209,28 @@ app_location <- "./bolton_neighbourhoods_app/"
     mutate(IndicatorName = ifelse(!Sex %in% c("Persons", "Not applicable"), 
                                   paste(IndicatorName, Sex, sep = " - "),
                                   IndicatorName)
-    )
-  
-  # get msoa boundaries    
-    msoa_boundaries <- readRDS("msoa boundaries.RDS")
-  
-    # add msoa boundary
-  nbourhood_indicators3 <- right_join(msoa_boundaries %>%
-                                      select(msoa11cd), # only want the join field & geometry whcih sticks anyway
-                                      nbourhood_indicators2b, # right join to keep geometry
-               by = c("msoa11cd" = "msoa_code")
-                 ) %>%
+    ) %>%
     mutate(DomainName = paste("Local health -", DomainName))
-
   
-# save for app ###############################
-#  saveRDS(nbourhood_indicators3, "./bolton_neighbourhoods_app/neighbourhood_indicators.RDS")
-    saveRDS(nbourhood_indicators3, "local_health_plus_boundaries.RDS")
+  # save
+  saveRDS(nbourhood_indicators2b, "local_health_processed.RDS")
+
+  # cleanup
+  rm(bolton_local_health2)
+  rm(england_indicators)
+  rm(england_min_max)
+  rm(england_values)
+  rm(local_health)
+  rm(local_health_all_msoa)
+  rm(local_health_bolton_msoa)
+  rm(local_health_borough)
+  rm(local_health_indicators)
+  rm(msoa_neighbourhood_multiple)
+  rm(msoa_standardised)
+  rm(nbourhood_indicators)
+  rm(nbourhood_indicators2)
+  rm(nbourhood_indicators2b)
+  rm(bolton_msoa_codes)
   
   #################### remove existing to update
   

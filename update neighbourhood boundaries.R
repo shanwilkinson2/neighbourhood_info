@@ -34,6 +34,8 @@
   saveRDS(nbh_msoa_lookup, "msoas_neighbourhood_multiple3.RDS")
   
 
-  
-
+# lsoa lookup
+ lsoa_neighbourhood_lookup <- read.csv("C:/Temp/Neighbourhoods_LSOA_lookup_2023_10.csv")
+ saveRDS(lsoa_neighbourhood_lookup, "lsoa_neighbourhood_lookup.RDS")
+ 
   

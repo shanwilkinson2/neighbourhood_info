@@ -2,11 +2,13 @@
  # imd, life expectancy, population
 
 library(dplyr)
-library(openxlsx)
+# library(openxlsx)
 library(tidyr)
 
-lsoa_neighbourhood <- read.xlsx("6 neighbourhoods final option.xlsx") %>%
-  janitor::clean_names()
+lsoa_neighbourhood <- readRDS("lsoa_neighbourhood_lookup.RDS") %>%
+  select(-c(neighbourhood_operational_num: operational_arrangements_apply_lsoa)) %>%
+  rename(neighbourhood_num = neighbourhood_analytical_num, 
+         neighbourhood_name = neighbourhood_analytical_name)
 
 # english indices of deprivation 2019
   # https://www.gov.uk/government/statistics/english-indices-of-deprivation-2019
@@ -29,7 +31,7 @@ lsoa_neighbourhood <- read.xlsx("6 neighbourhoods final option.xlsx") %>%
     ) %>%
     filter(local_authority_district_name_2019 == "Bolton")  %>%
     ungroup() %>%
-    rename(neighbourhood = x6_areas_name)
+    rename(neighbourhood = neighbourhood_name)
   
  
   nbourhood_indicators <- lsoa_standardised %>%
@@ -69,84 +71,54 @@ lsoa_neighbourhood <- read.xlsx("6 neighbourhoods final option.xlsx") %>%
            bolton_median = median(Value, na.rm = TRUE),
            bolton_q3 = quantile(Value, 0.75, na.rm = TRUE))
   
- for_julie <- nbourhood_indicators %>%
-   select(neighbourhood, IndicatorName, nbourhood_median:ncol(.)) %>%
-   group_by(neighbourhood, IndicatorName) %>%
-   slice(1)
-   
- for_julie2 <- readRDS("./bolton_neighbourhoods/neighbourhood_indicators.RDS") %>%
-   sf::st_drop_geometry() %>%
-   filter(IndicatorId == 93283) %>%
-   select(neighbourhood, IndicatorName, nbourhood_median:ncol(.)) %>%
-   group_by(IndicatorName, neighbourhood) %>%
-   slice(1)
- 
- for_julie_all <- bind_rows(for_julie, for_julie2)
- 
- write.xlsx(for_julie_all, "C:/temp/neighbourhood_data.xlsx")
-  
   # no england value
-  # # pivot to get bolton value in a different column
-  # nbourhood_indicators2 <- left_join(
-  #   nbourhood_indicators %>%
-  #     ungroup() %>%
-  #     filter(neighbourhood != "Bolton"),
-  #   nbourhood_indicators %>%
-  #     ungroup() %>%
-  #     filter(neighbourhood == "Bolton") %>%
-  #     select(bolton_value = nbourhood_median), # median will be the value as all bolton
-  #   by = c("Indicator"),
-  #   suffix = c("_neighbourhood", "_bolton")
-  # )
-  # 
-  # get England values 
-  
-  # actual England figure
-  england_indicators <- local_health_all_msoa %>%
-    filter(AreaType == "England") %>%
-    # keep latest value only - only seems to include latest anyway
-    group_by(IndicatorId, Sex, Age) %>%
-    filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
-    ungroup()
-  
-  # england MSOA max/min
-  england_min_max <- local_health_all_msoa %>%
-    filter(AreaType == "MSOA") %>%
-    # keep latest value only - only seems to include latest anyway
-    group_by(IndicatorId, Sex, Age) %>%
-    filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
-    mutate(
-      england_min = min(Value, na.rm = TRUE),
-      england_max = max(Value, na.rm = TRUE),
-      england_q1 = quantile(Value, 0.25, na.rm = TRUE),
-      england_median = median(Value, na.rm = TRUE),
-      england_q3 = quantile(Value, 0.75, na.rm = TRUE)) %>%
-    slice(1)
-  
-  # combined for joining
-  england_values <- full_join(
-    england_indicators %>%
-      select(IndicatorId, Sex, Age, TimePeriodSortable, Value)
-    ,
-    england_min_max %>%
-      select(IndicatorId, Sex, Age, TimePeriodSortable, england_min: england_q3)
-    ,
-    by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable")
-  )
-  
-  # join in england
-  nbourhood_indicators2b <- left_join(nbourhood_indicators2, 
-                                      england_values %>%
-                                        rename("england_value"= "Value"),
-                                      by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable"), 
-                                      suffix = c("", "_england")) %>%
-    # move absolute median z direction as it's not numeric so mutate across to 1 decimal place still works
-    relocate(z_nbourhood_median_abs_direction, .after = england_q3) %>%
-    # give new indicator name for sex disaggregated indicators
-    mutate(IndicatorName = ifelse(!Sex %in% c("Persons", "Not applicable"), 
-                                  paste(IndicatorName, Sex, sep = " - "),
-                                  IndicatorName)
-    )
+# 
+#    # actual England figure
+#   england_indicators <- local_health_all_msoa %>%
+#     filter(AreaType == "England") %>%
+#     # keep latest value only - only seems to include latest anyway
+#     group_by(IndicatorId, Sex, Age) %>%
+#     filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
+#     ungroup()
+# 
+#   # england MSOA max/min
+#   england_min_max <- local_health_all_msoa %>%
+#     filter(AreaType == "MSOA") %>%
+#     # keep latest value only - only seems to include latest anyway
+#     group_by(IndicatorId, Sex, Age) %>%
+#     filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
+#     mutate(
+#       england_min = min(Value, na.rm = TRUE),
+#       england_max = max(Value, na.rm = TRUE),
+#       england_q1 = quantile(Value, 0.25, na.rm = TRUE),
+#       england_median = median(Value, na.rm = TRUE),
+#       england_q3 = quantile(Value, 0.75, na.rm = TRUE)) %>%
+#     slice(1)
+# 
+#   # combined for joining
+#   england_values <- full_join(
+#     england_indicators %>%
+#       select(IndicatorId, Sex, Age, TimePeriodSortable, Value)
+#     ,
+#     england_min_max %>%
+#       select(IndicatorId, Sex, Age, TimePeriodSortable, england_min: england_q3)
+#     ,
+#     by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable")
+#   )
+# 
+#   # join in england
+#   nbourhood_indicators2b <- left_join(nbourhood_indicators2,
+#                                       england_values %>%
+#                                         rename("england_value"= "Value"),
+#                                       by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable"),
+#                                       suffix = c("", "_england")) %>%
+#     # move absolute median z direction as it's not numeric so mutate across to 1 decimal place still works
+#     relocate(z_nbourhood_median_abs_direction, .after = england_q3) %>%
+#     # give new indicator name for sex disaggregated indicators
+#     mutate(IndicatorName = ifelse(!Sex %in% c("Persons", "Not applicable"),
+#                                   paste(IndicatorName, Sex, sep = " - "),
+#                                   IndicatorName)
+#     )
   
   #################################################################
   # census age info - 5 year bands only at lsoa
@@ -169,7 +141,7 @@ lsoa_neighbourhood <- read.xlsx("6 neighbourhoods final option.xlsx") %>%
     ) %>%
     filter(stringr::str_detect(geography, "^Bolton"))  %>%
     ungroup() %>%
-    rename(neighbourhood = x6_areas_name)
+    rename(neighbourhood = neighbourhood_name)
   
   
   neighbourhood_pop <- lsoa_standardised %>%
@@ -227,14 +199,6 @@ lsoa_neighbourhood <- read.xlsx("6 neighbourhoods final option.xlsx") %>%
            nbourhood_pct = nbourhood_count/nbourhood_denominator*100
            )
 
-  
-  for_julie3 <- nbourhood_indicators %>%
-    group_by(neighbourhood, IndicatorName) %>%
-    slice(1) %>%
-    select(neighbourhood, IndicatorName, nbourhood_count:ncol(.))
-  write.xlsx(for_julie3, "C:/temp/neighbourhood_age.xlsx")
-  
-  
   ################# other census info
   # standardised not avialable at lsoa
   # census2021-ts037-lsoa.csv - gen health unstandardised
@@ -271,7 +235,7 @@ lsoa_neighbourhood <- read.xlsx("6 neighbourhoods final option.xlsx") %>%
     ) %>%
     filter(stringr::str_detect(geography, "^Bolton"))  %>%
     ungroup() %>%
-    rename(neighbourhood = x6_areas_name)
+    rename(neighbourhood = neighbourhood_name)
   
   
   neighbourhood_pop <- lsoa_standardised %>%
@@ -329,10 +293,4 @@ lsoa_neighbourhood <- read.xlsx("6 neighbourhoods final option.xlsx") %>%
            nbourhood_pct = nbourhood_count/nbourhood_denominator*100
     )
   
-  
-  for_julie4 <- nbourhood_indicators %>%
-    group_by(neighbourhood, IndicatorName) %>%
-    slice(1) %>%
-    select(neighbourhood, IndicatorName, nbourhood_count:ncol(.))
-  write.xlsx(for_julie4, "C:/temp/neighbourhood_gen_health_disabil.xlsx")
-  
+saveRDS(nbourhood_indicators, "lsoa_data.RDS")
