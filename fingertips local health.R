@@ -1,18 +1,16 @@
 
-# create file "local_health_plus_boundaries.RDS"
+# create file "local_health_processed.RDS"
+local_health_processed <- readRDS("local_health_processed.RDS")
 
 #################### load packages ################################
 
 library(dplyr)
 library(data.table)
-# library(shinycssloaders)
-#library(readxl)
+
 
 ################# get data from phe fingertips local health #########################  
 
-app_location <- "./bolton_neighbourhoods_app/"
 
-  # downloads data, adds boundaries, saves nbourhood_indicators3 as neighbourhood_indicators for app
   
 # local health 
 # https://fingertips.phe.org.uk/profile/local-health/data#page/0/gid/1938133180/ati/3/iid/93744/age/28/sex/4/cid/4/tbm/1

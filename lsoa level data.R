@@ -1,8 +1,10 @@
 # get lsoa data - minimum needed
  # imd, life expectancy, population
 
+# creates age, deprivation, health_disab
+
 library(dplyr)
-# library(openxlsx)
+library(openxlsx)
 library(tidyr)
 
 lsoa_neighbourhood <- readRDS("lsoa_neighbourhood_lookup.RDS") %>%
@@ -69,7 +71,16 @@ lsoa_neighbourhood <- readRDS("lsoa_neighbourhood_lookup.RDS") %>%
            bolton_max = max(Value, na.rm = TRUE),
            bolton_q1 = quantile(Value, 0.25, na.rm = TRUE),
            bolton_median = median(Value, na.rm = TRUE),
-           bolton_q3 = quantile(Value, 0.75, na.rm = TRUE))
+           bolton_q3 = quantile(Value, 0.75, na.rm = TRUE)) %>%
+    ungroup() %>%
+    mutate(DomainName = "Deprivation")
+  
+  deprivation <- nbourhood_indicators
+  
+  # tidyup
+    rm(nbourhood_indicators)
+    rm(imd_overall)
+    rm(lsoa_standardised)
   
   # no england value
 # 
@@ -134,7 +145,7 @@ lsoa_neighbourhood <- readRDS("lsoa_neighbourhood_lookup.RDS") %>%
   # add in neighbourhood
   lsoa_standardised <- age %>%
     full_join(lsoa_neighbourhood,
-              by = c("geography_code" = "lsoa_name")) %>%
+              by = c("geography_code" = "lsoa_code")) %>%
     group_by(IndicatorName) %>%
     mutate(
       lsoa_z = (Value - mean(Value, na.rm = TRUE))/ sd(Value, na.rm = TRUE)
@@ -197,8 +208,17 @@ lsoa_neighbourhood <- readRDS("lsoa_neighbourhood_lookup.RDS") %>%
     relocate(nbourhood_denominator, .after = nbourhood_count) %>%
     mutate(nbourhood_count = sum(num),
            nbourhood_pct = nbourhood_count/nbourhood_denominator*100
-           )
+           ) %>%
+    ungroup() %>%
+    mutate(DomainName = "Census 2021 - Age")
 
+  age <- nbourhood_indicators
+  
+  # tidyup
+  rm(nbourhood_indicators)
+  rm(neighbourhood_pop)
+  rm(lsoa_standardised)
+  
   ################# other census info
   # standardised not avialable at lsoa
   # census2021-ts037-lsoa.csv - gen health unstandardised
@@ -291,6 +311,17 @@ lsoa_neighbourhood <- readRDS("lsoa_neighbourhood_lookup.RDS") %>%
     relocate(nbourhood_denominator, .after = nbourhood_count) %>%
     mutate(nbourhood_count = sum(num),
            nbourhood_pct = nbourhood_count/nbourhood_denominator*100
-    )
-  
+    )  %>%
+    ungroup() %>%
+    mutate(DomainName = "Census 2021 - Age")
+
+  health_disab <- nbourhood_indicators
+
+  rm(disab)
+  rm(gen_health)
+  rm(lsoa_standardised)
+  rm(nbourhood_indicators)  
+  rm(neighbourhood_pop)
+  rm(together)
+              
 saveRDS(nbourhood_indicators, "lsoa_data.RDS")
