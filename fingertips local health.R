@@ -103,21 +103,25 @@ bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
     
     # get borough data 
     local_health_bolton <- local_health_borough %>%
+      filter(AreaName == "Bolton" & 
+               TimePeriodSortable == max(TimePeriodSortable)) %>%
       select(c(IndicatorId, IndicatorName, 
                AreaCode, AreaName, AreaType, 
                Sex, Age, 
                Value,
-               )) %>%
-      filter(AreaName == "Bolton")
+               )) 
+      
     
     # get england data 
     local_health_england <- local_health_borough %>%
+      filter(AreaName == "England" &
+               TimePeriodSortable == max(TimePeriodSortable)) %>%
       select(c(IndicatorId, IndicatorName, 
                AreaCode, AreaName, AreaType, 
                Sex, Age, 
                Value,
-      )) %>%
-      filter(AreaName == "England") 
+      ))
+
     
   # join england & bolton data
     local_health_bolton_eng <- full_join(local_health_bolton %>% 
@@ -125,14 +129,15 @@ bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
                               local_health_england %>%
                                 select(IndicatorId, IndicatorName, Sex, Age, Value),
                               by = c("IndicatorId", "IndicatorName", "Sex", "Age"),
-                              suffix = c("_bolton", "_england"))
+                              suffix = c("_bolton", "_england"), 
+                              relationship = "many-to-many")
     
     # tidyup
     rm(local_health_bolton)
     rm(local_health_england)
     
     
-## get neighbourhood data #########################################
+## get neighbourhood lookup #########################################
 
 # # MSOA best fit (local health doesn't go down to lsoa)
 #   msoa_neighbourhood <- readRDS("msoas_neighbourhood.RDS")
@@ -140,41 +145,18 @@ bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
   # version where MSOAs appear in more than 1 neighbourhood
   msoa_neighbourhood_multiple <- readRDS("msoas_neighbourhood_multiple3.RDS")
   
-    # add in neighbourhood (MSOA can be in more than one neighbourhood)
-    bolton_local_health2 <- local_health %>%
-      select(c(IndicatorId, IndicatorName, 
-               AreaCode, AreaName, AreaType, 
-               Sex, Age, 
-               Value,
-               Count, Denominator,
-               TimePeriodSortable,
-      )) %>%
-    full_join(msoa_neighbourhood_multiple, 
-              by = c("AreaCode"= "msoa_code"),
-              relationship = "many-to-many") %>%
-      # keep latest value only - only seems to include latest anyway
-      group_by(IndicatorId, Sex, Age, AreaName) %>%
-      filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
-            ungroup() %>%
-      # add in domain ie part of the profile 
-      left_join(local_health_indicators %>% select(-IndicatorName),
-                by = "IndicatorId") %>%
-      arrange(GroupId) %>%
-      group_by(IndicatorId, Sex, Age, neighbourhood_name)  
-        
+
 ####### transform to neighbourhood level ##############################################################
 
-    
-    # combine indicators but keep msoa level so can have 1 dataset
-    # will have error code as no max/ min where neighbourhood = Bolton
-    nbourhood_indicators <- bolton_local_health2 %>%
-      left_join(msoa_standardised %>%
-                  select(IndicatorId, Sex, Age, TimePeriodSortable, AreaCode, msoa_z), 
-                by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable", "AreaCode")
-      ) %>%
-      # mutate(neighbourhood_name = ifelse(AreaName == "Bolton", "Bolton", neighbourhood_name)) %>%
-      group_by(IndicatorId, Sex, Age, TimePeriodSortable, neighbourhood_name) %>%
-      mutate(nbourhood_count = sum(Count), 
+    nbourhood_indicators <- msoa_standardised %>%
+      # add neighbourhoods (msoa may be in several)
+      left_join(msoa_neighbourhood_multiple,
+                by = c("AreaCode" = "msoa_code"),
+                relationship = "many-to-many") %>%
+      relocate(neighbourhood_name:hoc_msoa_name, .after = AreaName) %>%
+      group_by(IndicatorId, Sex, Age, neighbourhood_name) %>%
+      mutate(
+             nbourhood_count = sum(Value),
              nbourhood_denominator = sum(Denominator),
              nbourhood_pct = nbourhood_count/ nbourhood_denominator*100,
              nbourhood_median = median(Value, na.rm = TRUE),
@@ -200,86 +182,40 @@ bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
           z_nbourhood_median <0 ~ "lower",
           z_nbourhood_median <1.96 ~ "much lower",
           z_nbourhood_median ==0 ~ "average")
-      ) %>%
-      # bolton min & max
-      group_by(IndicatorId, Sex, Age, TimePeriodSortable) %>%
-      mutate(bolton_min = min(Value, na.rm = TRUE),
-             bolton_max = max(Value, na.rm = TRUE),
-             bolton_q1 = quantile(Value, 0.25, na.rm = TRUE),
-             bolton_median = median(Value, na.rm = TRUE),
-             bolton_q3 = quantile(Value, 0.75, na.rm = TRUE))
-    
+      ) 
   
-  # pivot to get bolton value in a different column
+  ### add in bolton & england ##################################
+ 
   nbourhood_indicators2 <- left_join(
-    nbourhood_indicators %>%
-      ungroup() %>%
-      filter(neighbourhood_name != "Bolton"),
-    nbourhood_indicators %>%
-      ungroup() %>%
-      filter(neighbourhood_name == "Bolton") %>%
-      select(IndicatorId, Sex, Age, TimePeriodSortable, bolton_value = nbourhood_median), # median will be the value as all bolton
-    by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable"),
-    suffix = c("_neighbourhood", "_bolton")
+    nbourhood_indicators, 
+    local_health_bolton_eng %>%
+      select(-IndicatorName),
+    by = c("IndicatorId", "Sex", "Age")
   )
-  
-  # get England values 
-
-  # actual England figure
-  england_indicators <- local_health_all_msoa %>%
-    filter(AreaType == "England") %>%
-    # keep latest value only - only seems to include latest anyway
-    group_by(IndicatorId, Sex, Age) %>%
-    filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
-    ungroup()
-  
-
-  
-  # combined for joining
-  england_values <- full_join(
-    england_indicators %>%
-      select(IndicatorId, Sex, Age, TimePeriodSortable, Value)
-    ,
-    england_min_max %>%
-      select(IndicatorId, Sex, Age, TimePeriodSortable, england_min: england_q3)
-    ,
-    by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable")
-  )
-  
-  # join in england
-  nbourhood_indicators2b <- left_join(nbourhood_indicators2, 
-                                      england_values %>%
-                                        rename("england_value"= "Value"),
-                                      by = c("IndicatorId", "Sex", "Age", "TimePeriodSortable"), 
-                                      suffix = c("", "_england")) %>%
-    # move absolute median z direction as it's not numeric so mutate across to 1 decimal place still works
-    relocate(z_nbourhood_median_abs_direction, .after = england_q3) %>%
-    # give new indicator name for sex disaggregated indicators
-    mutate(IndicatorName = ifelse(!Sex %in% c("Persons", "Not applicable"), 
-                                  paste(IndicatorName, Sex, sep = " - "),
-                                  IndicatorName)
-    ) %>%
-    mutate(DomainName = paste("Local health -", DomainName))
+    
+  # add in Domain name ############################
+    
+  nbourhood_indicators3 <- nbourhood_indicators2 %>%
+      left_join(local_health_indicators %>% 
+                  select(IndicatorId, DomainName), 
+                by = "IndicatorId") %>%
+      relocate(DomainName, .after = IndicatorName) %>%
+      mutate(DomainName = paste("Local health -", DomainName))
   
   # save
-  saveRDS(nbourhood_indicators2b, "local_health_processed.RDS")
+  saveRDS(nbourhood_indicators3, "local_health_processed.RDS")
 
   # cleanup
-  rm(bolton_local_health2)
-  rm(england_indicators)
-  rm(england_min_max)
-  rm(england_values)
-  rm(local_health)
   rm(local_health_all_msoa)
-  rm(local_health_bolton_msoa)
   rm(local_health_borough)
   rm(local_health_indicators)
   rm(msoa_neighbourhood_multiple)
   rm(msoa_standardised)
   rm(nbourhood_indicators)
   rm(nbourhood_indicators2)
-  rm(nbourhood_indicators2b)
+  rm(nbourhood_indicators3)
   rm(bolton_msoa_codes)
+  rm(local_health_bolton_eng)
   
   #################### remove existing to update
   
@@ -291,11 +227,4 @@ bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
     bind_rows(nbourhood_indicators3) %>%
     saveRDS("./bolton_neighbourhoods/neighbourhood_indicators2.RDS")  
   
-  
-# get rid of separate & intermediate files
-   rm(bolton_local_health2, england_indicators, england_min_max, england_values, local_health, 
-     local_health_bolton_msoa, local_health_borough,
-     local_health_all_msoa, local_health_indicators, msoa_boundaries, msoa_neighbourhood_multiple,nbourhood_indicators,
-     nbourhood_indicators2, nbourhood_indicators2b, nbourhood_indicators3,
-     )
-  
+
