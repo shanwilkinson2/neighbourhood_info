@@ -45,7 +45,7 @@ bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
     rm(local_health_metadata)
     rm(local_health_group_metadata)
 
-####################################    
+## download data ##################################    
     
   # get borough local health data
     # gets Bolton & England from API direct as csv. only available as csv download
@@ -61,22 +61,78 @@ bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
     local_health_all_msoa <- fread("https://fingertips.phe.org.uk/api/all_data/csv/by_profile_id?child_area_type_id=3&parent_area_type_id=15&profile_id=143") %>%
       janitor::clean_names(case = "upper_camel") # upper camel case used in API json output & fingertipsR
 
-## download data off fingertips ####################################    
+## msoa ####################################    
     
-    # filter just bolton
-    local_health_bolton_msoa <- local_health_all_msoa %>%
-      # areaname is now MSOA hoc name, no longer e.g. "Bolton 001" so can't filter by that. 
-      filter(AreaCode %in% bolton_msoa_codes$msoa_code) 
-
-  # join msoa & borough data
-    local_health <- bind_rows(local_health_bolton_msoa, local_health_borough) %>%
+    
+    # msoa z score
+    msoa_standardised <- local_health_all_msoa %>%
       select(c(IndicatorId, IndicatorName, 
                AreaCode, AreaName, AreaType, 
                Sex, Age, 
                Value,
                Count, Denominator,
                TimePeriodSortable,
-               ))
+      )) %>%
+      filter(AreaType == "MSOA") %>%
+      # keep latest value only - only seems to include latest anyway
+      group_by(IndicatorId, Sex, Age) %>%
+        filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
+      # get standardised value
+        mutate(
+          msoa_z = (Value - mean(Value, na.rm = TRUE))/ sd(Value, na.rm = TRUE)
+        ) %>%
+      # get england values from all msoas
+      mutate(
+        england_min = min(Value, na.rm = TRUE),
+        england_max = max(Value, na.rm = TRUE),
+        england_q1 = quantile(Value, 0.25, na.rm = TRUE),
+        england_median = median(Value, na.rm = TRUE),
+        england_q3 = quantile(Value, 0.75, na.rm = TRUE)) %>%
+      # areaname is now MSOA hoc name, no longer e.g. "Bolton 001" so can't filter by that. 
+      # want Bolton only now have used all for standardisation
+        filter(AreaCode %in% bolton_msoa_codes$msoa_code) %>%
+      # get bolton values now it's just bolton msoas
+      mutate(bolton_min = min(Value, na.rm = TRUE),
+             bolton_max = max(Value, na.rm = TRUE),
+             bolton_q1 = quantile(Value, 0.25, na.rm = TRUE),
+             bolton_median = median(Value, na.rm = TRUE),
+             bolton_q3 = quantile(Value, 0.75, na.rm = TRUE)) %>%
+      ungroup()        
+    
+## get england & bolton values ##########################################    
+    
+    # get borough data 
+    local_health_bolton <- local_health_borough %>%
+      select(c(IndicatorId, IndicatorName, 
+               AreaCode, AreaName, AreaType, 
+               Sex, Age, 
+               Value,
+               )) %>%
+      filter(AreaName == "Bolton")
+    
+    # get england data 
+    local_health_england <- local_health_borough %>%
+      select(c(IndicatorId, IndicatorName, 
+               AreaCode, AreaName, AreaType, 
+               Sex, Age, 
+               Value,
+      )) %>%
+      filter(AreaName == "England") 
+    
+  # join england & bolton data
+    local_health_bolton_eng <- full_join(local_health_bolton %>% 
+                                select(IndicatorId, IndicatorName, Sex, Age, Value), 
+                              local_health_england %>%
+                                select(IndicatorId, IndicatorName, Sex, Age, Value),
+                              by = c("IndicatorId", "IndicatorName", "Sex", "Age"),
+                              suffix = c("_bolton", "_england"))
+    
+    # tidyup
+    rm(local_health_bolton)
+    rm(local_health_england)
+    
+    
+## get neighbourhood data #########################################
 
 # # MSOA best fit (local health doesn't go down to lsoa)
 #   msoa_neighbourhood <- readRDS("msoas_neighbourhood.RDS")
@@ -108,26 +164,6 @@ bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
         
 ####### transform to neighbourhood level ##############################################################
 
-    # msoa z score
-    msoa_standardised <- local_health_all_msoa %>%
-      select(c(IndicatorId, IndicatorName, 
-               AreaCode, AreaName, AreaType, 
-               Sex, Age, 
-               Value,
-               Count, Denominator,
-               TimePeriodSortable,
-      )) %>%
-      filter(AreaType == "MSOA") %>%
-      # keep latest value only - only seems to include latest anyway
-      group_by(IndicatorId, Sex, Age) %>%
-      filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
-      mutate(
-        msoa_z = (Value - mean(Value, na.rm = TRUE))/ sd(Value, na.rm = TRUE)
-      ) %>%
-      # areaname is now MSOA hoc name, no longer e.g. "Bolton 001" so can't filter by that. 
-      # want Bolton only now have used all for standardisation
-      filter(AreaCode %in% bolton_msoa_codes$msoa_code) %>%
-    ungroup()        
     
     # combine indicators but keep msoa level so can have 1 dataset
     # will have error code as no max/ min where neighbourhood = Bolton
@@ -197,19 +233,7 @@ bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
     filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
     ungroup()
   
-  # england MSOA max/min
-  england_min_max <- local_health_all_msoa %>%
-    filter(AreaType == "MSOA") %>%
-    # keep latest value only - only seems to include latest anyway
-    group_by(IndicatorId, Sex, Age) %>%
-    filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
-    mutate(
-      england_min = min(Value, na.rm = TRUE),
-      england_max = max(Value, na.rm = TRUE),
-      england_q1 = quantile(Value, 0.25, na.rm = TRUE),
-      england_median = median(Value, na.rm = TRUE),
-      england_q3 = quantile(Value, 0.75, na.rm = TRUE)) %>%
-    slice(1)
+
   
   # combined for joining
   england_values <- full_join(
