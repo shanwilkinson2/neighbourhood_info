@@ -1,4 +1,3 @@
-
 # create file "local_health_processed.RDS"
 local_health_processed <- readRDS("local_health_processed.RDS")
 
@@ -10,12 +9,20 @@ library(data.table)
 
 ################# get data from phe fingertips local health #########################  
 
+# open neighbourhood lookup to get just bolton msoas
+bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
+  select(-c(neighbourhood_num, neighbourhood_name)) %>%
+  unique()
+
+############
 
   
 # local health 
 # https://fingertips.phe.org.uk/profile/local-health/data#page/0/gid/1938133180/ati/3/iid/93744/age/28/sex/4/cid/4/tbm/1
 
 # gets indicator details direct from API as fingertipsR is no longer on cran
+
+### downloads metadata off fingertips ###################
 
 # group names & numbers
     local_health_metadata <- httr::GET("https://fingertips.phe.org.uk/api/profile?profile_id=143")$content %>%
@@ -38,6 +45,8 @@ library(data.table)
     rm(local_health_metadata)
     rm(local_health_group_metadata)
 
+####################################    
+    
   # get borough local health data
     # gets Bolton & England from API direct as csv. only available as csv download
     # ProfileID = 143,
@@ -52,10 +61,7 @@ library(data.table)
     local_health_all_msoa <- fread("https://fingertips.phe.org.uk/api/all_data/csv/by_profile_id?child_area_type_id=3&parent_area_type_id=15&profile_id=143") %>%
       janitor::clean_names(case = "upper_camel") # upper camel case used in API json output & fingertipsR
 
-    # open neighbourhood lookup to get just bolton msoas
-    bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
-    select(-c(neighbourhood_num, neighbourhood_name)) %>%
-      unique()
+## download data off fingertips ####################################    
     
     # filter just bolton
     local_health_bolton_msoa <- local_health_all_msoa %>%
@@ -63,7 +69,14 @@ library(data.table)
       filter(AreaCode %in% bolton_msoa_codes$msoa_code) 
 
   # join msoa & borough data
-    local_health <- bind_rows(local_health_bolton_msoa, local_health_borough)
+    local_health <- bind_rows(local_health_bolton_msoa, local_health_borough) %>%
+      select(c(IndicatorId, IndicatorName, 
+               AreaCode, AreaName, AreaType, 
+               Sex, Age, 
+               Value,
+               Count, Denominator,
+               TimePeriodSortable,
+               ))
 
 # # MSOA best fit (local health doesn't go down to lsoa)
 #   msoa_neighbourhood <- readRDS("msoas_neighbourhood.RDS")
@@ -71,12 +84,21 @@ library(data.table)
   # version where MSOAs appear in more than 1 neighbourhood
   msoa_neighbourhood_multiple <- readRDS("msoas_neighbourhood_multiple3.RDS")
   
-    # add in neighbourhood using multiple file
-    bolton_local_health2 <- full_join(local_health, msoa_neighbourhood_multiple, 
-                                      by = c("AreaCode"= "msoa_code"),
-                                      relationship = "many-to-many") %>%
+    # add in neighbourhood (MSOA can be in more than one neighbourhood)
+    bolton_local_health2 <- local_health %>%
+      select(c(IndicatorId, IndicatorName, 
+               AreaCode, AreaName, AreaType, 
+               Sex, Age, 
+               Value,
+               Count, Denominator,
+               TimePeriodSortable,
+      )) %>%
+    full_join(msoa_neighbourhood_multiple, 
+              by = c("AreaCode"= "msoa_code"),
+              relationship = "many-to-many") %>%
       # keep latest value only - only seems to include latest anyway
       group_by(IndicatorId, Sex, Age, AreaName) %>%
+      filter(TimePeriodSortable == max(TimePeriodSortable)) %>%
             ungroup() %>%
       # add in domain ie part of the profile 
       left_join(local_health_indicators %>% select(-IndicatorName),
@@ -88,6 +110,13 @@ library(data.table)
 
     # msoa z score
     msoa_standardised <- local_health_all_msoa %>%
+      select(c(IndicatorId, IndicatorName, 
+               AreaCode, AreaName, AreaType, 
+               Sex, Age, 
+               Value,
+               Count, Denominator,
+               TimePeriodSortable,
+      )) %>%
       filter(AreaType == "MSOA") %>%
       # keep latest value only - only seems to include latest anyway
       group_by(IndicatorId, Sex, Age) %>%
@@ -97,12 +126,10 @@ library(data.table)
       ) %>%
       # areaname is now MSOA hoc name, no longer e.g. "Bolton 001" so can't filter by that. 
       # want Bolton only now have used all for standardisation
-      filter(AreaCode %in% bolton_msoa_codes$msoa_code) 
+      filter(AreaCode %in% bolton_msoa_codes$msoa_code) %>%
     ungroup()        
     
-    rm(bolton_msoa_codes)
-    
-# combine indicators but keep msoa level so can have 1 dataset
+    # combine indicators but keep msoa level so can have 1 dataset
     # will have error code as no max/ min where neighbourhood = Bolton
     nbourhood_indicators <- bolton_local_health2 %>%
       left_join(msoa_standardised %>%
