@@ -42,7 +42,7 @@
   )
   
   # lsoa data
-  lsoa_data <- readRDS("lsoa_data.RDS")
+  lsoa_data <- readRDS("lsoa_imd_age_data.RDS")
   
 # single dataset for the app
   neighbourhood_indicators <- readRDS("./bolton_neighbourhoods_app/neighbourhood_indicators.RDS") # in the app folder

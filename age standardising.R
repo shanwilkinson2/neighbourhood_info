@@ -58,3 +58,111 @@ age_genhealth_disab2 <- age_genhealth_disab %>%
   group_by(lsoa_code, IndicatorName) %>%
     slice(1) %>%
   ungroup()
+
+############################################
+
+
+################# other census info
+# standardised not available at lsoa
+# census2021-ts037-lsoa.csv - gen health unstandardised
+# census2021-ts038-lsoa.csv - disabilty unstandardised
+
+
+gen_health <- read.csv("census2021-ts037-lsoa.csv") %>%
+  janitor::clean_names() %>%
+  pivot_longer(cols = -c(1:4),
+               values_to = "Value",
+               names_to = "IndicatorName") %>%
+  rename(num = Value,
+         area_total = 4) %>%
+  mutate(Value = num/area_total *100)
+
+disab <- read.csv("census2021-ts038-lsoa.csv") %>%
+  janitor::clean_names() %>%
+  pivot_longer(cols = -c(1:4),
+               values_to = "Value",
+               names_to = "IndicatorName") %>%
+  rename(num = Value,
+         area_total = 4) %>%
+  mutate(Value = num/area_total *100)
+
+together <- bind_rows(gen_health, disab)
+
+# add in neighbourhood
+lsoa_standardised <- together %>%
+  full_join(lsoa_neighbourhood,
+            by = c("geography_code" = "lsoa_name")) %>%
+  group_by(IndicatorName) %>%
+  mutate(
+    lsoa_z = (Value - mean(Value, na.rm = TRUE))/ sd(Value, na.rm = TRUE)
+  ) %>%
+  filter(stringr::str_detect(geography, "^Bolton"))  %>%
+  ungroup() %>%
+  rename(neighbourhood = neighbourhood_name)
+
+
+neighbourhood_pop <- lsoa_standardised %>%
+  select(geography, neighbourhood, area_total) %>%
+  group_by(geography, neighbourhood) %>%
+  # get only 1 age total row per lsoa
+  slice(1) %>%
+  ungroup() %>%
+  group_by(neighbourhood) %>%
+  summarise(nbourhood_denominator = sum(area_total))
+
+nbourhood_indicators <- lsoa_standardised %>%
+  group_by(IndicatorName, neighbourhood) %>%
+  mutate(nbourhood_count = NA, 
+         nbourhood_denominator = NA,
+         nbourhood_pct = NA,
+         nbourhood_median = median(Value, na.rm = TRUE),
+         nbourhood_max = max(Value, na.rm = TRUE),
+         nbourhood_min = min(Value, na.rm = TRUE),
+         nbourhood_q1 = quantile(Value, 0.25, na.rm = TRUE),
+         nbourhood_q3 = quantile(Value, 0.75, na.rm = TRUE),
+         z_nbourhood_median = median(lsoa_z, na.rm = TRUE),
+         z_nbourhood_max = max(lsoa_z, na.rm = TRUE),
+         z_nbourhood_min = min(lsoa_z, na.rm = TRUE),
+         z_nbourhood_q1 = quantile(lsoa_z, 0.25, na.rm = TRUE),
+         z_nbourhood_q3 = quantile(lsoa_z, 0.75, na.rm = TRUE),
+         z_nbourhoood_median_abs = abs(z_nbourhood_median),
+         z_nbourhood_iqr_abs = abs(z_nbourhood_q3 - z_nbourhood_q1),
+         z_nbourhood_range_abs = abs(z_nbourhood_max - z_nbourhood_min)
+  ) %>%
+  ungroup() %>%
+  # get direction of absolute values
+  mutate(
+    z_nbourhood_median_abs_direction = case_when(
+      z_nbourhood_median >1.96 ~ "much higher", # 95% of a normal distribution lie between +1.96 & -1.96
+      z_nbourhood_median >0 ~ "higher",
+      z_nbourhood_median <0 ~ "lower",
+      z_nbourhood_median <1.96 ~ "much lower",
+      z_nbourhood_median ==0 ~ "average")
+  ) %>%
+  # bolton min & max
+  group_by(IndicatorName) %>%
+  mutate(bolton_min = min(Value, na.rm = TRUE),
+         bolton_max = max(Value, na.rm = TRUE),
+         bolton_q1 = quantile(Value, 0.25, na.rm = TRUE),
+         bolton_median = median(Value, na.rm = TRUE),
+         bolton_q3 = quantile(Value, 0.75, na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  group_by(IndicatorName, neighbourhood) %>%
+  select(-nbourhood_denominator) %>%
+  left_join(neighbourhood_pop, by = ("neighbourhood")) %>%
+  relocate(nbourhood_denominator, .after = nbourhood_count) %>%
+  mutate(nbourhood_count = sum(num),
+         nbourhood_pct = nbourhood_count/nbourhood_denominator*100
+  )  %>%
+  ungroup() %>%
+  mutate(DomainName = "Census 2021 - Age")
+
+health_disab <- nbourhood_indicators
+
+rm(disab)
+rm(gen_health)
+rm(lsoa_standardised)
+rm(nbourhood_indicators)  
+rm(neighbourhood_pop)
+rm(together)
