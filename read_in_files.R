@@ -1,3 +1,18 @@
+# final dataset uses:
+# IndicatorId, Sex, Age, neighbourhood, IndicatorName, DomainName, AreaName
+# z_nbourhood_bedian_abs, z_nbourhood_median_abs_direction, nbourhood_median, england_median
+# z_nbourhood_iqr_abs, z_nbourhood_range_abs
+# nbourhood_min, bolton_min, england_min, 
+# nbourhood_q1, bolton_q1, england_q1, 
+# nbourhood_median, bolton_median, england_median
+# nbourhood_pct, bolton_value, england_value
+# nbourhood_q3, bolton_q3, england_q3
+# nbourhood_max, bolton_max, england_max
+# hoc_msoa_name, Value, 
+# geometry
+
+
+
 # read in data created in other scripts
 
 # ensure working directory is the upper folder neighbourhood_info
