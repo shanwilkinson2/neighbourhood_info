@@ -10,12 +10,12 @@ library(magrittr)
 library(DT)
 
 # load static datasets
-data_refresh_date <- "05/05/2023"
+data_refresh_date <- "08/01/2024"
 
 # neighbourhood/ msoa lookup table
 msoa_neighbourhood_multiple <- readRDS("msoa_neighbourhood_multiple.RDS")
 
-neighbourhood_names <- unique(msoa_neighbourhood_multiple$neighbourhood) %>%
+neighbourhood_names <- unique(msoa_neighbourhood_multiple$neighbourhood_name) %>%
   sort()
 
 neighbourhood_boundaries <- readRDS("neighbourhood_boundaries.RDS")
@@ -37,7 +37,7 @@ neighbourhood_data <- neighbourhood_indicators %>%
 
 # single dataset filtered for msoa only
 msoa_data <- neighbourhood_indicators %>%
-  select(neighbourhood, AreaName, hoc_msoa_name, msoa11cd:IndicatorName, Value)
+  select(neighbourhood, AreaName, hoc_msoa_name, AreaCode:IndicatorName, Value)
 
 
 #######################################################################
@@ -523,7 +523,7 @@ server <- function(input, output) {
       rename(`MSOA code` = msoa_code, 
              `MSOA name` = msoa_name,
              `MSOA House of Commons Library name` = hoc_msoa_name,
-             `Neighbourhood number` = x6_areas_number,
+             `Neighbourhood number` = neighbourhood_num,
              `Neighbourhood name` = neighbourhood, 
              `Number of lsoas` = num_lsoas
       )

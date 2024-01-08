@@ -2,7 +2,9 @@
  
 library(data.table)
 library(dplyr)
+library(tidyr)
 
+## read in age files ################################################
 
 england_age <- fread("census2021-england age.csv") %>% 
   janitor::clean_names() %>%
@@ -25,6 +27,8 @@ age_genhealth <- fread("census2021-lsoa age gen health.csv") %>%
          lsoa_name = lower_layer_super_output_areas,
          IndicatorName = general_health_6_categories) %>%
   mutate(DomainName = "General health") 
+
+## add england age profile to lsoa ##############################
 
 age_genhealth_disab <- bind_rows(age_disab, age_genhealth) %>% 
   filter(IndicatorName != "Does not apply") %>% 
@@ -62,11 +66,7 @@ age_genhealth_disab2 <- age_genhealth_disab %>%
 ############################################
 
 
-################# other census info
-# standardised not available at lsoa
-# census2021-ts037-lsoa.csv - gen health unstandardised
-# census2021-ts038-lsoa.csv - disabilty unstandardised
-
+################# gen health & disability #################################
 
 gen_health <- read.csv("census2021-ts037-lsoa.csv") %>%
   janitor::clean_names() %>%
@@ -75,7 +75,19 @@ gen_health <- read.csv("census2021-ts037-lsoa.csv") %>%
                names_to = "IndicatorName") %>%
   rename(num = Value,
          area_total = 4) %>%
-  mutate(Value = num/area_total *100)
+  mutate(
+    Value = num/area_total *100,
+    DomainName = "Census 2021 - general health (standardised)",
+    IndicatorName = case_when(
+      IndicatorName == "general_health_very_good_health" ~ "Very good health",
+      IndicatorName == "general_health_good_health" ~"Good health",
+      IndicatorName == "general_health_fair_health" ~"Fair health",
+      IndicatorName == "general_health_bad_health" ~"Bad health",
+      IndicatorName == "general_health_very_bad_health"  ~"Very bad health",
+      TRUE ~IndicatorName
+    )
+  ) %>%
+  relocate(DomainName, .after = IndicatorName)
 
 disab <- read.csv("census2021-ts038-lsoa.csv") %>%
   janitor::clean_names() %>%
@@ -84,21 +96,41 @@ disab <- read.csv("census2021-ts038-lsoa.csv") %>%
                names_to = "IndicatorName") %>%
   rename(num = Value,
          area_total = 4) %>%
-  mutate(Value = num/area_total *100)
+  mutate(
+    Value = num/area_total *100,
+    DomainName = "Census 2021 - disability (standardised)",
+    IndicatorName = case_when(
+      IndicatorName == "disability_disabled_under_the_equality_act" ~"Disabled under the equality act", 
+      IndicatorName == "disability_disabled_under_the_equality_act_day_to_day_activities_limited_a_lot" ~"Disabled - activities limited a lot",
+      IndicatorName == "disability_disabled_under_the_equality_act_day_to_day_activities_limited_a_little"  ~"Disabled - activities limited a little",
+      IndicatorName == "disability_not_disabled_under_the_equality_act" ~"Not disabled under the equality act",
+      IndicatorName == "disability_not_disabled_under_the_equality_act_has_long_term_physical_or_mental_health_condition_but_day_to_day_activities_are_not_limited" ~"Not disabled - long term condition no limitation",
+      IndicatorName == "disability_not_disabled_under_the_equality_act_no_long_term_physical_or_mental_health_conditions" ~"Not disabled - no long term condition",
+      TRUE ~IndicatorName
+    )
+  ) %>%
+  relocate(DomainName, .after = IndicatorName)
 
 together <- bind_rows(gen_health, disab)
 
 # add in neighbourhood
-lsoa_standardised <- together %>%
-  full_join(lsoa_neighbourhood,
-            by = c("geography_code" = "lsoa_name")) %>%
-  group_by(IndicatorName) %>%
-  mutate(
-    lsoa_z = (Value - mean(Value, na.rm = TRUE))/ sd(Value, na.rm = TRUE)
-  ) %>%
-  filter(stringr::str_detect(geography, "^Bolton"))  %>%
-  ungroup() %>%
-  rename(neighbourhood = neighbourhood_name)
+  
+  lsoa_neighbourhood <- readRDS("lsoa_neighbourhood_lookup.RDS") %>%
+    rename(neighbourhood_name = neighbourhood_analytical_name,
+           neighbourhood_num = neighbourhood_analytical_num) %>%
+    select(-c(neighbourhood_operational_num, neighbourhood_operational_name, 
+              operational_arrangements_apply_lsoa))
+  
+  lsoa_standardised <- together %>%
+    full_join(lsoa_neighbourhood,
+              by = c("geography_code" = "lsoa_name")) %>%
+    group_by(IndicatorName) %>%
+    mutate(
+      lsoa_z = (Value - mean(Value, na.rm = TRUE))/ sd(Value, na.rm = TRUE)
+    ) %>%
+    filter(stringr::str_detect(geography, "^Bolton"))  %>%
+    ungroup() %>%
+    rename(neighbourhood = neighbourhood_name)
 
 
 neighbourhood_pop <- lsoa_standardised %>%
@@ -155,10 +187,12 @@ nbourhood_indicators <- lsoa_standardised %>%
   mutate(nbourhood_count = sum(num),
          nbourhood_pct = nbourhood_count/nbourhood_denominator*100
   )  %>%
-  ungroup() %>%
-  mutate(DomainName = "Census 2021 - Age")
+  ungroup() 
 
-health_disab <- nbourhood_indicators
+health_disab <- nbourhood_indicators %>%
+  select(-c(date, area_total, lsoa_code))
+  
+saveRDS(health_disab, "lsoa_health_disab_standardised.RDS")
 
 rm(disab)
 rm(gen_health)

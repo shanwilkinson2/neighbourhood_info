@@ -328,7 +328,7 @@ lsoa_neighbourhood <- readRDS("lsoa_neighbourhood_lookup.RDS") %>%
     mutate(nbourhood_count = sum(num),
            nbourhood_pct = nbourhood_count/nbourhood_denominator*100
     )  %>%
-    ungroup()
+    ungroup() 
   
   health_disab <- nbourhood_indicators
   
@@ -345,6 +345,8 @@ lsoa_neighbourhood <- readRDS("lsoa_neighbourhood_lookup.RDS") %>%
   ##############################################################################
    
   lsoa_data <- bind_rows(age, deprivation) %>%
-    bind_rows(health_disab)
+    bind_rows(health_disab) %>%
+    select(-c("date", 
+              "local_authority_district_code_2019", "local_authority_district_name_2019", "area_total"))
              
-saveRDS(lsoa_imd_age, "lsoa_data.RDS")
+saveRDS(lsoa_data, "lsoa_data.RDS")

@@ -200,7 +200,12 @@ bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
                   select(IndicatorId, DomainName), 
                 by = "IndicatorId") %>%
       relocate(DomainName, .after = IndicatorName) %>%
-      mutate(DomainName = paste("Local health -", DomainName))
+      mutate(DomainName = paste("Local health -", DomainName),
+             AreaName = msoa_name
+             ) %>%
+      select(-msoa_name)
+
+      
   
   # save
   saveRDS(nbourhood_indicators3, "local_health_processed.RDS")
