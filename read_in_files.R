@@ -5,7 +5,7 @@
 # nbourhood_min, bolton_min, england_min, 
 # nbourhood_q1, bolton_q1, england_q1, 
 # nbourhood_median, bolton_median, england_median
-# nbourhood_pct, bolton_value, england_value
+# nbourhood_pct, Value_bolton, Value_england,
 # nbourhood_q3, bolton_q3, england_q3
 # nbourhood_max, bolton_max, england_max
 # hoc_msoa_name, Value, 
@@ -59,11 +59,14 @@ library(sf)
                                         rename(AreaCode = msoa11cd)
   
   
-  # lsoa data
+  # lsoa data ##########################################
   lsoa_data <- readRDS("lsoa_data.RDS")
-  lsoa_standardised_data <- readRDS("lsoa_health_disab_standardised.RDS")
   
-  lsoa_data2 <- bind_rows(lsoa_data, lsoa_standardised_data) %>%
+  # # not finished standardised yet, leave out for the moment
+  # lsoa_standardised_data <- readRDS("lsoa_health_disab_standardised.RDS")
+  
+  #lsoa_data2 <- bind_rows(lsoa_data, lsoa_standardised_data) %>%
+   lsoa_data2 <- lsoa_data %>% 
     rename(AreaName = geography, AreaCode = geography_code)
   
   lsoa_data_plus_boundaries <- right_join(lsoa_boundaries, 

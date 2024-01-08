@@ -64,7 +64,7 @@ age_genhealth_disab2 <- age_genhealth_disab %>%
   ungroup()
 
 ############################################
-
+ # not changed this yet !!!!!! ***********************************************
 
 ################# gen health & disability #################################
 
@@ -123,27 +123,26 @@ together <- bind_rows(gen_health, disab)
   
   lsoa_standardised <- together %>%
     full_join(lsoa_neighbourhood,
-              by = c("geography_code" = "lsoa_name")) %>%
+              by = c("geography_code" = "lsoa_code")) %>%
     group_by(IndicatorName) %>%
     mutate(
       lsoa_z = (Value - mean(Value, na.rm = TRUE))/ sd(Value, na.rm = TRUE)
     ) %>%
     filter(stringr::str_detect(geography, "^Bolton"))  %>%
-    ungroup() %>%
-    rename(neighbourhood = neighbourhood_name)
+    ungroup() 
 
 
 neighbourhood_pop <- lsoa_standardised %>%
-  select(geography, neighbourhood, area_total) %>%
-  group_by(geography, neighbourhood) %>%
+  select(geography, neighbourhood_name, area_total) %>%
+  group_by(geography, neighbourhood_name) %>%
   # get only 1 age total row per lsoa
   slice(1) %>%
   ungroup() %>%
-  group_by(neighbourhood) %>%
+  group_by(neighbourhood_name) %>%
   summarise(nbourhood_denominator = sum(area_total))
 
 nbourhood_indicators <- lsoa_standardised %>%
-  group_by(IndicatorName, neighbourhood) %>%
+  group_by(IndicatorName, neighbourhood_name) %>%
   mutate(nbourhood_count = NA, 
          nbourhood_denominator = NA,
          nbourhood_pct = NA,
@@ -180,9 +179,9 @@ nbourhood_indicators <- lsoa_standardised %>%
          bolton_q3 = quantile(Value, 0.75, na.rm = TRUE)
   ) %>%
   ungroup() %>%
-  group_by(IndicatorName, neighbourhood) %>%
+  group_by(IndicatorName, neighbourhood_name) %>%
   select(-nbourhood_denominator) %>%
-  left_join(neighbourhood_pop, by = ("neighbourhood")) %>%
+  left_join(neighbourhood_pop, by = ("neighbourhood_name")) %>%
   relocate(nbourhood_denominator, .after = nbourhood_count) %>%
   mutate(nbourhood_count = sum(num),
          nbourhood_pct = nbourhood_count/nbourhood_denominator*100
@@ -190,7 +189,8 @@ nbourhood_indicators <- lsoa_standardised %>%
   ungroup() 
 
 health_disab <- nbourhood_indicators %>%
-  select(-c(date, area_total, lsoa_code))
+  select(-c(date, area_total)) %>%
+  mutate(IndicatorName = paste(IndicatorName, "(standardised)"))
   
 saveRDS(health_disab, "lsoa_health_disab_standardised.RDS")
 

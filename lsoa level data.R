@@ -32,8 +32,8 @@ lsoa_neighbourhood <- readRDS("lsoa_neighbourhood_lookup.RDS") %>%
                  values_to = "Value", names_to = "IndicatorName") %>%
     mutate(
       IndicatorName = case_when(
-      IndicatorName == "index_of_multiple_deprivation_imd_rank_where_1_is_most_deprived" ~"IMD rank",
-      IndicatorName == "index_of_multiple_deprivation_imd_decile_where_1_is_most_deprived_10_percent_of_lso_as" ~ "IMD decile",
+      IndicatorName == "index_of_multiple_deprivation_imd_rank_where_1_is_most_deprived" ~"* IMD rank",
+      IndicatorName == "index_of_multiple_deprivation_imd_decile_where_1_is_most_deprived_10_percent_of_lso_as" ~ "* IMD decile",
       IndicatorName == "income_rank_where_1_is_most_deprived" ~"Income rank",
       IndicatorName == "income_decile_where_1_is_most_deprived_10_percent_of_lso_as" ~"Income decile",
       IndicatorName == "employment_rank_where_1_is_most_deprived" ~"Employment rank",
@@ -347,6 +347,7 @@ lsoa_neighbourhood <- readRDS("lsoa_neighbourhood_lookup.RDS") %>%
   lsoa_data <- bind_rows(age, deprivation) %>%
     bind_rows(health_disab) %>%
     select(-c("date", 
-              "local_authority_district_code_2019", "local_authority_district_name_2019", "area_total"))
+              "local_authority_district_code_2019", "local_authority_district_name_2019", "area_total")) %>%
+    rename(neighbourhood_name = neighbourhood)
              
 saveRDS(lsoa_data, "lsoa_data.RDS")
