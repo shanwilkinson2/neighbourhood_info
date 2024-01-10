@@ -10,23 +10,23 @@ library(magrittr)
 library(DT)
 
 # load static datasets
-data_refresh_date <- "05/05/2023"
+data_refresh_date <- "08/01/2024"
 
 # neighbourhood/ msoa lookup table
 msoa_neighbourhood_multiple <- readRDS("msoa_neighbourhood_multiple.RDS")
 
-neighbourhood_names <- unique(msoa_neighbourhood_multiple$neighbourhood) %>%
+neighbourhood_names <- unique(msoa_neighbourhood_multiple$neighbourhood_name) %>%
   sort()
 
 neighbourhood_boundaries <- readRDS("neighbourhood_boundaries.RDS")
 
 # msoa data with summary & boundaries - single dataset to load for both neighbourhood & msoa level
-neighbourhood_indicators <- readRDS("neighbourhood_indicators.RDS")
+all_data <- readRDS("neighbourhood_indicators.RDS")
 
 # single dataset filtered for neighbourhood only
-neighbourhood_data <- neighbourhood_indicators %>%
+neighbourhood_data <- all_data %>%
   st_drop_geometry() %>%
-  group_by(IndicatorId, Sex, Age, neighbourhood) %>%
+  group_by(IndicatorName, Sex, Age, neighbourhood_name) %>%
   slice(1) %>% # first row only per neighbourhood, so will give neighbourood values as same for every msoa in the neighbourhood
   ungroup() %>%
   #select(-c(msoa11cd, ParentCode:AreaType, Value:hoc_msoa_name)) %>%
@@ -34,10 +34,6 @@ neighbourhood_data <- neighbourhood_indicators %>%
   mutate(across(.cols = nbourhood_pct:england_q3, 
                 .fns = ~round(.x, 1)
   ))
-
-# single dataset filtered for msoa only
-msoa_data <- neighbourhood_indicators %>%
-  select(neighbourhood, AreaName, hoc_msoa_name, msoa11cd:IndicatorName, Value)
 
 
 #######################################################################
@@ -57,7 +53,7 @@ ui <-  dashboardPage(skin = "yellow",
                          menuItem("All areas map", tabName = "allareas_map", icon = icon("globe")),
                          menuItem("Chart", tabName = "chart_tab", icon = icon("chart-line")),
                          menuItem("Differences", tabName = "z_scores", icon = icon("arrows-alt-h")),
-                         menuItem("Table", tabName = "table_tab", icon = icon("table")),
+                         # menuItem("Table", tabName = "table_tab", icon = icon("table")),
                          menuItem("About neighbourhoods", tabName = "about_neighbourhoods", icon = icon("map-marked-alt")),
                          menuItem("About the data", tabName = "about", icon = icon("info"))
                        ),
@@ -70,7 +66,7 @@ ui <-  dashboardPage(skin = "yellow",
                        # domain selector (loads of indicators)
                        selectInput(inputId = "select_domain",
                                    label = "Select domain:",
-                                   choices = unique(neighbourhood_data$DomainName)
+                                   choices = unique(all_data$DomainName)
                        ),
                        # indicator selector
                        uiOutput("indicators_in_domain")
@@ -179,6 +175,7 @@ ui <-  dashboardPage(skin = "yellow",
                          # difference from England
                          tabItem(tabName = "z_scores",
                                  h3("How different is the selected neighbourhood from England?"),
+                                 downloadButton("bttn_diff_data", "Download all selected neighbourhood differences data (csv)"),
                                  DT::DTOutput("neighbourhood_z"),
                                  h3("How to interpret this table"),
                                  p("This table shows how the smaller areas making up the selected neighbourhood compare with other smaller areas all across England."),
@@ -191,15 +188,15 @@ ui <-  dashboardPage(skin = "yellow",
                                          "This lets you compare indicators that are strongly associated with age, and let you see if areas are higher or lower than expected.")
                          ),
                          
-                         # table tab
-                         tabItem(tabName = "table_tab",
-                                 h2(textOutput("selected_neighbourhood")),
-                                 br(),
-                                 downloadButton("bttn_data", "Download all neighbourhood data (csv)"),
-                                 br(),
-                                 h3(textOutput("selected_domain")),
-                                 DT::DTOutput("table1")
-                         ),
+                         # # table tab
+                         # tabItem(tabName = "table_tab",
+                         #         h2(textOutput("selected_neighbourhood")),
+                         #         br(),
+                         #         downloadButton("bttn_data", "Download all neighbourhood data (csv)"),
+                         #         br(),
+                         #         h3(textOutput("selected_domain")),
+                         #         DT::DTOutput("table1")
+                         # ),
                          
                          # about neighbourhoods
                          tabItem(tabName = "about_neighbourhoods",
@@ -207,7 +204,8 @@ ui <-  dashboardPage(skin = "yellow",
                                  leafletOutput("neighbourhoods_map"),
                                  h3("What are neighbourhoods?"),
                                  p("Neighbourhoods are a local geography, created for integrated health and social care."),
-                                 p("The map above shows Bolton's neighbourhoods."),
+                                 p("The map above shows Bolton's neighbourhoods. More information can be found on "),
+                                 a("Bolton JSNA - neighbourhoods", href = "https://www.boltonjsna.org.uk/neighbourhoods"),
                                  p("Bolton's neighbourhoods are made up of Lower Super Output Areas (LSOAs), but not all data in this tool is only available at MSOA, which is bigger so the boundaries don't quite match."),
                                  h3("MSOA neighbourhood lookup"),
                                  DT::DTOutput("msoa_neighbourhood_lookup")
@@ -215,6 +213,7 @@ ui <-  dashboardPage(skin = "yellow",
                          
                          # data sources
                          tabItem(tabName = "about",
+                                 downloadButton("bttn_data", "Download all neighbourhood data (csv)"),
                                  h2("Data sources"),
                                  p("Data in this tool is sourced from a variety of places.",
                                    "This tab gives more information about where the indicators come from.", 
@@ -298,38 +297,38 @@ server <- function(input, output) {
     )
   })
   
-  # data for table for selected neighbourhood for selected domain
-  table_data <- reactive({
-    neighbourhood_data %>%
-      # filtered_data() %>%
-      filter(neighbourhood == input$select_neighbourhood & 
-               DomainName == input$select_domain) %>%
-      # mutate(across(.cols = nbourhood_pct:bolton_max, 
-      #               .fns = ~round(.x, 1)
-      #                 )) %>%
-      select(IndicatorName, nbourhood_pct:bolton_value) %>%
-      rename(`Indicator name` = IndicatorName, `N'b'hood calculated value` = nbourhood_pct, 
-             `N'b'hood average` = nbourhood_median, `N'b'hood min` = nbourhood_min, `N'b'hood max` = nbourhood_max, 
-             `Bolton value` = bolton_value, `Bolton min` = bolton_min, `Bolton max` = bolton_max)
-  })
+  # # data for table for selected neighbourhood for selected domain
+  # table_data <- reactive({
+  #   neighbourhood_data %>%
+  #     # filtered_data() %>%
+  #     filter(neighbourhood_name == input$select_neighbourhood & 
+  #              DomainName == input$select_domain) # %>%
+  #     # mutate(across(.cols = nbourhood_pct:bolton_max, 
+  #     #               .fns = ~round(.x, 1)
+  #     #                 )) %>%
+  #     # select(IndicatorName, nbourhood_pct:bolton_value) %>%
+  #     # rename(`Indicator name` = IndicatorName, `N'b'hood calculated value` = nbourhood_pct, 
+  #     #        `N'b'hood average` = nbourhood_median, `N'b'hood min` = nbourhood_min, `N'b'hood max` = nbourhood_max, 
+  #     #        `Bolton value` = bolton_value, `Bolton min` = bolton_min, `Bolton max` = bolton_max)
+  # })
   
   
-  # create table
-  output$table1 <- DT::renderDT({
-    table_data()
-  }, 
-  filter = "top", 
-  rownames = FALSE,
-  extensions = "Buttons", 
-  options = list(dom = "Bprti", # order of buttons/ filter etc
-                 buttons = c("copy", "csv", "excel"))
-  
-  )
+  # # create table
+  # output$table1 <- DT::renderDT({
+  #   table_data()
+  # }, 
+  # filter = "top", 
+  # rownames = FALSE,
+  # extensions = "Buttons", 
+  # options = list(dom = "Bprti", # order of buttons/ filter etc
+  #                buttons = c("copy", "csv", "excel"))
+  # 
+  # )
   
   # reactive dataset for map
-  # includes all neighbourhoods here for indicator palatte
+  # includes all neighbourhoods here for indicator palette
   map_data <- reactive({
-    msoa_data %>%
+    all_data %>%
       filter(IndicatorName == input$select_indicator) 
   })
   
@@ -355,7 +354,7 @@ server <- function(input, output) {
                                      Indicator value: {round(map_data()$Value)}"))
     
     map_data() %>%
-      filter(neighbourhood == input$select_neighbourhood) %>%
+      filter(neighbourhood_name == input$select_neighbourhood) %>%
       leaflet() %>%
       addResetMapButton() %>%
       addProviderTiles("Esri.WorldGrayCanvas") %>%
@@ -419,7 +418,7 @@ server <- function(input, output) {
   boxplot_data <- reactive({
     neighbourhood_data %>%
       filter(IndicatorName == input$select_indicator &
-               neighbourhood == input$select_neighbourhood) 
+               neighbourhood_name == input$select_neighbourhood) 
   })
   
   # boxplot to show how neighbourhood value & range compares with Bolton
@@ -430,7 +429,7 @@ server <- function(input, output) {
                 y = list(
                   "England",
                   "Bolton", 
-                  boxplot_data()$neighbourhood
+                  boxplot_data()$neighbourhood_name
                 ),
                 q1 = list(boxplot_data()$england_q1,
                           boxplot_data()$bolton_q1, 
@@ -469,7 +468,7 @@ server <- function(input, output) {
   # create table
   output$boxplot_table <- DT::renderDT({
     boxplot_data() %$%
-      data.frame(Area = c(neighbourhood, "Bolton", "England")
+      data.frame(Area = c(neighbourhood_name, "Bolton", "England")
                  ,
                  Min = c(nbourhood_min, 
                          bolton_min, 
@@ -483,10 +482,10 @@ server <- function(input, output) {
                             bolton_median,
                             england_median)
                  ,
-                 Value = c(nbourhood_pct,
-                           bolton_value, 
-                           england_value)
-                 ,
+                 # Value = c(nbourhood_pct,
+                 #           Value_bolton, 
+                 #           Value_england)
+                 # ,
                  `Quartile3` = c(nbourhood_q3, 
                                  bolton_q3, 
                                  england_q3)
@@ -495,37 +494,74 @@ server <- function(input, output) {
                          bolton_max, 
                          england_max) 
                  
-      )
+      ) %>%
+      mutate(across(.cols = 2:6, ~round(.x, digits = 1)))
   }, rownames = FALSE)
   
-  # create table
-  output$neighbourhood_z <- DT::renderDT({
+  # create reactive dataset for differences table & download
+  differences_data <- reactive({
     neighbourhood_data %>%
-      filter(neighbourhood == input$select_neighbourhood) %>%
-      select(Indicator = IndicatorName, Domain = DomainName,  
-             `N'b'hood standardised average` = z_nbourhoood_median_abs, `N'b'hood direction` = z_nbourhood_median_abs_direction,
-             `N'b'hood average` = nbourhood_median, `England average` = england_median,
-             `N'b'hood standardised mid half range` = z_nbourhood_iqr_abs, `N'b'hood standardised range` =  z_nbourhood_range_abs
-      ) %>%
-      arrange(desc(`N'b'hood standardised average`)) 
+    filter(neighbourhood_name == input$select_neighbourhood) %>%
+    select(IndicatorName,
+           DomainName,
+           z_nbourhoood_median_abs,
+           z_nbourhood_median_abs_direction,
+           nbourhood_median,
+           england_median,
+           z_nbourhood_iqr_abs,
+           z_nbourhood_range_abs
+    ) %>%
+    arrange(desc(z_nbourhoood_median_abs)) %>%
+    mutate(across(.cols = c(
+      z_nbourhoood_median_abs,
+      nbourhood_median,
+      england_median,
+      z_nbourhood_iqr_abs,
+      z_nbourhood_range_abs
+    ),
+    .fns = ~round(.x, digits = 1))) %>%
+    rename(Indicator = IndicatorName,
+           Domain = DomainName,
+           `N'b'hood standardised average` = z_nbourhoood_median_abs,
+           `N'b'hood direction` = z_nbourhood_median_abs_direction,
+           `N'b'hood average` = nbourhood_median,
+           `England average` = england_median,
+           `N'b'hood standardised mid half range` = z_nbourhood_iqr_abs,
+           `N'b'hood standardised range` =  z_nbourhood_range_abs
+    )
+    })
+  
+  # create table for differences tab
+  output$neighbourhood_z <- DT::renderDT({
+    differences_data()
   }, 
   filter = "top", 
   rownames = FALSE,
-  extensions = "Buttons", 
+  #extensions = "Buttons", 
   options = list(dom = "Bprti", # order of buttons/ filter etc
-                 buttons = c("copy", "csv", "excel"))
+                 buttons = c(
+                   #"copy", "csv", "excel"
+                   )
+                 )
   
   )
   
-  # create table
+  # generate data for download button on differences tab
+  output$bttn_diff_data <- downloadHandler(filename = "neighbourhood differences data.csv",
+                                      # create file for downloading
+                                      content = function(file){
+                                        write.csv(differences_data()
+                                                  , file)
+                                      })
+  
+  # create table for msoa neighbourhood lookup
   output$msoa_neighbourhood_lookup <- DT::renderDT({
     msoa_neighbourhood_multiple %>%
       rename(`MSOA code` = msoa_code, 
              `MSOA name` = msoa_name,
              `MSOA House of Commons Library name` = hoc_msoa_name,
-             `Neighbourhood number` = x6_areas_number,
-             `Neighbourhood name` = neighbourhood, 
-             `Number of lsoas` = num_lsoas
+             `Neighbourhood number` = neighbourhood_num,
+             `Neighbourhood name` = neighbourhood_name
       )
   }, 
   filter = "top", 
@@ -549,7 +585,7 @@ server <- function(input, output) {
   output$bttn_data <- downloadHandler(filename = "all neighbourhoods data.csv",
                                       # create file for downloading
                                       content = function(file){
-                                        write.csv(neighbourhood_data %>%
+                                        write.csv(all_data %>%
                                                     st_drop_geometry()
                                                   , file)
                                       })
