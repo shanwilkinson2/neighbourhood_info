@@ -46,7 +46,7 @@ age_genhealth_disab <- bind_rows(age_disab, age_genhealth) %>%
             by = "age_6_categories") %>%
   # calculate adjusted area % if exactly as england age structure
   
-  filter(stringr::str_detect(lsoa_name, "^Bolton"))  %>% #****************
+  # filter(stringr::str_detect(lsoa_name, "^Bolton"))  %>% #****************
   mutate(
     area_pct = observation/ area_total *100,
     area_pct_adj = area_pct/lsoa_age_proportion * england_age_proportion
