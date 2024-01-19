@@ -201,7 +201,11 @@ bolton_msoa_codes <- readRDS("msoas_neighbourhood_multiple3.RDS") %>%
                 by = "IndicatorId") %>%
       relocate(DomainName, .after = IndicatorName) %>%
       mutate(DomainName = paste("Local health -", DomainName),
-             AreaName = msoa_name
+             AreaName = msoa_name,
+             # add sex into indicator name if its' split m/f
+             IndicatorName = ifelse(Sex == "Male" | Sex == "Female",
+                                    paste0(IndicatorName, " (", Sex, ")"),
+                                    IndicatorName)
              ) %>%
       select(-msoa_name)
 
