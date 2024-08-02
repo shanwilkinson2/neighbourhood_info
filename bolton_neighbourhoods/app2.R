@@ -11,6 +11,7 @@ library(DT)
 
 # load static datasets
 data_refresh_date <- "08/01/2024"
+wards <- readRDS("ward_boundaries.RDS")
 
 # neighbourhood/ msoa lookup table
 msoa_neighbourhood_multiple <- readRDS("msoa_neighbourhood_multiple.RDS")
@@ -401,8 +402,12 @@ server <- function(input, output) {
           direction = "auto")) %>%
       addPolylines(data = neighbourhood_boundaries, weight = 4, color = "black", fillOpacity = 0,
                   label = ~paste(neighbourhood_name, "neighbourhood"), group = "Neighbourhoods")  %>%
-      addControl(glue::glue("<b>{input$select_indicator}</b>{ifelse(input$select_domain == 'Deprivation', '<br>Low number = more deprived', '')}"), position = "topright") %>%
-      addLayersControl(overlayGroups = c("Neighbourhoods")) %>%
+      addPolylines(data = wards, weight = 4, color = "blue", fillOpacity = 0,
+                   label = ~paste(ward_name_2023, "ward"), group = "Wards") %>%
+      addControl(glue::glue("<b>{input$select_indicator}</b>{ifelse(input$select_domain == 'Deprivation', '<br>Low number = more deprived', '')}",
+                            "<br>Ward & neighbourhood overlays shown, select/ deselect below"), 
+                 position = "topright") %>%
+      addLayersControl(overlayGroups = c("Neighbourhoods", "Wards")) %>%
       addLegend(
         "bottomright",
         pal = msoa_pal(),
