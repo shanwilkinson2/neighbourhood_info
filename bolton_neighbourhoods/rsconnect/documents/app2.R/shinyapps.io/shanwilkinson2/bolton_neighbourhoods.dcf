@@ -5,7 +5,7 @@ account: shanwilkinson2
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4295992
-bundleId: 8129712
+bundleId: 8161975
 url: https://shanwilkinson2.shinyapps.io/bolton_neighbourhoods/
 asMultiple: FALSE
 asStatic: FALSE
